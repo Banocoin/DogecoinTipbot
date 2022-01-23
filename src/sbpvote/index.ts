@@ -7,14 +7,27 @@ import { WebsocketConnection } from "../libwallet/ws";
 import { dbPromise } from "../common/load-db";
 import { tokenIds, tokenTickers } from "../common/constants";
 import viteQueue from "../cryptocurrencies/viteQueue";
-import { convert } from "../common/convert";
+import { convert, tokenNameToDisplayName } from "../common/convert";
 import * as vite from "@vite/vitejs"
 import { getVITEAddressOrCreateOne } from "../wallet/address";
 import SBPVote from "../models/SBPVote";
-import { durationUnits } from "../common/util";
 import { getCurrentCycle } from "../wallet/cycle";
+import { WebhookClient } from "discord.js";
+import Twit from "twitter-api-v2"
+import { durationUnits } from "../common/util";
+import { getBlockedAddresses } from "./util";
 
 const ws = new WebsocketConnection()
+
+const webhook = new WebhookClient({
+    url: process.env.WEBHOOK_VOTERS_REWARDS
+})
+const twitc = new Twit({
+    appKey: process.env.TWITTER_API_KEY,
+    appSecret: process.env.TWITTER_API_SECRET,
+    accessToken: process.env.TWITTER_ACCESS_TOKEN,
+    accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET
+})
 
 Promise.all([
     dbPromise,
@@ -22,14 +35,10 @@ Promise.all([
 ]).then(async () => {
     const [
         rewardAddress,
-        distributionAddress,
-        quotaAddress,
-        sbpClaimAddress
+        blockedAddresses
     ] = await Promise.all([
         getVITEAddressOrCreateOne("SBP", "Rewards"),
-        getVITEAddressOrCreateOne("Mods", "Rewards"),
-        getVITEAddressOrCreateOne("Batch", "Quota"),
-        getVITEAddressOrCreateOne("SBPClaim", "Rewards")
+        getBlockedAddresses()
     ])
     console.log(`SBP Rewards address: ${rewardAddress.address}`)
     ws.on("tx", async tx => {
@@ -39,6 +48,7 @@ Promise.all([
         // we got the payout in vite.
         await viteQueue.queueAction(rewardAddress.address, async () => {
             const balances = await requestWallet("get_balances", rewardAddress.address)
+            //const viteBalance = new BigNumber(convert("1883.86360327", "VITE", "RAW"))
             const viteBalance = new BigNumber(balances[tokenIds.VITE])
             const vitcBalance = new BigNumber(balances[tokenIds.VITC])
             // wait to have at least 400 vite before distributing.
@@ -53,37 +63,38 @@ Promise.all([
             // I'll just assume no. I might add exceptions if people asks me to do so.
             let totalValid = new BigNumber(0)
             const validAddresses = []
+            const one = convert("1", "VITE", "RAW")
+            const promises = []
             for(const address in votes.votes){
+                if(blockedAddresses.includes(address))continue
                 // skip smart contracts
                 if(vite.wallet.isValidAddress(address) === vite.wallet.AddressType.Contract)continue
-                if([
-                    rewardAddress.address,
-                    quotaAddress.address,
-                    distributionAddress.address,
-                    sbpClaimAddress.address
-                ].includes(address))continue
 
-                let sbpVote = await SBPVote.findOne({
-                    address: address
-                })
-                if(!sbpVote){
-                    // No document, create it ?
-                    // means the wallet system was offline.
-                    try{
-                        sbpVote = await SBPVote.create({
-                            since: new Date(),
-                            address: address
-                        })
-                    }catch{}
-                    continue
-                }else{
-                    // if less than a day since registration.
-                    if(sbpVote.since.getTime() > Date.now()-durationUnits.h)continue
-                }
-
-                totalValid = totalValid.plus(votes.votes[address])
-                validAddresses.push(address)
+                promises.push((async () => {
+                    let sbpVote = await SBPVote.findOne({
+                        address: address
+                    })
+                    if(!sbpVote){
+                        // No document, create it ?
+                        // means the wallet system was offline.
+                        try{
+                            sbpVote = await SBPVote.create({
+                                since: new Date(),
+                                address: address
+                            })
+                        }catch{}
+                        return
+                    }else{
+                        // if less than a day since registration.
+                        if(sbpVote.since.getTime() > Date.now()-durationUnits.h)return
+                    }
+                    if(new BigNumber(votes.votes[address]).isLessThan(one))return
+    
+                    totalValid = totalValid.plus(votes.votes[address])
+                    validAddresses.push(address)
+                })())
             }
+            await Promise.all(promises)
 
             // if nobody is valid (shouldn't happen)
             // just stop here and keep the funds for later.
@@ -94,9 +105,9 @@ Promise.all([
             let totalVitc = new BigNumber(0)
             for(const address of validAddresses){
                 const amount = new BigNumber(votes.votes[address])
+                    .times(50)
                     .times(viteBalance)
                     .div(totalValid)
-                    .times(25)
                     .toFixed(0)
 
                 // remove potential spams
@@ -118,8 +129,8 @@ Promise.all([
             let totalVite = new BigNumber(0)
             for(const address of validAddresses){
                 const amount = new BigNumber(votes.votes[address])
-                .div(totalValid)
                 .times(viteBalance)
+                .div(totalValid)
                 .toFixed(0)
 
                 // remove potential spams
@@ -133,16 +144,41 @@ Promise.all([
             
             const start = Date.now()
 
-            await requestWallet("bulk_send", rewardAddress.address, payouts, tokenIds.VITE)
-            await requestWallet("bulk_send", rewardAddress.address, vitcPayouts, tokenIds.VITC)
+            try{
+                await requestWallet("bulk_send", rewardAddress.address, payouts, tokenIds.VITE, 75*1000)
+            }catch(err){
+                console.error(err)
+            }
+            try{
+                await requestWallet("bulk_send", rewardAddress.address, vitcPayouts, tokenIds.VITC, 75*1000)
+            }catch(err){
+                console.error(err)
+            }
 
             console.log("Sent ! In", (Date.now()-start)/1000, "seconds !")
             console.log("Sending tweets and messages about distribution...")
             
-            await requestWallet("send_sbp_messages", {
-                vitc: totalVitc.toFixed(),
-                vite: totalVite.toFixed()
-            })
+            // send tweets and messages about distribution
+            await Promise.all([
+                webhook.send(`Today's 💊 voter rewards were sent!
+
+**${Math.round(parseFloat(convert(totalVite, "RAW", "VITE")))} ${tokenNameToDisplayName("VITE")} <:ViteV3:919478731150590012>**!
+
+And
+
+**${Math.round(parseFloat(convert(totalVitc, "RAW", "VITC")))} ${tokenNameToDisplayName("VITC")} <:vitc_logo:912246312777445376>**!
+
+Thanks to all our voters!`),
+                twitc.v1.tweet(`Today's 💊 voter rewards were sent!
+
+${Math.round(parseFloat(convert(totalVite, "RAW", "VITE")))} ${tokenNameToDisplayName("VITE")}!
+
+And
+
+${Math.round(parseFloat(convert(totalVitc, "RAW", "VITC")))} ${tokenNameToDisplayName("VITC")}!
+
+Thanks to all our voters!`)
+            ])
         })
     })
 })

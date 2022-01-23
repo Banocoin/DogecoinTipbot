@@ -14,24 +14,22 @@ import BigNumber from "bignumber.js"
 import lt from "long-timeout"
 import { wait } from "../common/util"
 
+const VITC_TREASURY = "vite_4041e7e3d80f879001b7ff67dbef4be23827b65131ef2c79ac"
+
 const destinations = [
     {
-        percent: 50,
+        percent: 40,
         // voters distribution
-        address: "SBP.Rewards"
+        address: "SBP.Rewards.Vitoge"
     },
     {
-        percent: 25,
-        // DAO distribution
-        address: "DAO.Rewards"
-    },
-    {
-        percent: 25,
-        // vitc treasury
-        address: "vite_4041e7e3d80f879001b7ff67dbef4be23827b65131ef2c79ac"
+        percent: 60,
+        // Vitoge treasury
+        address: "vite_3286b588ac2808e52f70e0a5e73b335ace8750c4fc6103eaf2"
     }
 ]
-const sbp = process.env.SBP_NAME
+const sbp = "Vitoge_SBP"
+const fee = convert("10", "VITE", "RAW")
 
 const ws = new WebsocketConnection()
 
@@ -43,7 +41,7 @@ Promise.all([
     let sbpClaimAddress:IAddress
     const promises = [
         (async()=>{
-            sbpClaimAddress = await getVITEAddressOrCreateOne("SBPClaim", "Rewards")
+            sbpClaimAddress = await getVITEAddressOrCreateOne("SBPClaim", "Rewards.Vitoge")
         })()
     ]
     for(const destination of destinations){
@@ -62,6 +60,7 @@ Promise.all([
         process.exit()
     }
     await Promise.all(promises)
+    console.log("SBP Claim address", sbpClaimAddress.address)
 
     ws.on("tx", async tx => {
         if(tx.to !== sbpClaimAddress.address || tx.type !== "receive")return
@@ -70,17 +69,24 @@ Promise.all([
 
         await viteQueue.queueAction(sbpClaimAddress.address, async () => {
             const balances = await requestWallet("get_balances", sbpClaimAddress.address)
-            const viteBalance = new BigNumber(balances[tokenIds.VITE])
+            // let viteBalance = new BigNumber(convert("2200", "VITE", "RAW"))
+            let viteBalance = new BigNumber(balances[tokenIds.VITE])
             // wait to have at least 400 vite before distributing.
             // will stop if someone sends a ridiculously low amount
             // to the claim address
             if(viteBalance.isLessThan(convert("400", "VITE", "RAW")))return
 
-            // math time
-            const payouts = []
+            // math time :)
+            const payouts:[string, string][] = [
+                [
+                    VITC_TREASURY,
+                    fee
+                ]
+            ]
+            viteBalance = viteBalance.minus(fee)
             for(const destination of destinations){
                 const amount = viteBalance.times(destination.percent).div(100)
-                if(amount.isEqualTo(0))continue
+                if(amount.isLessThan(1))continue
                 payouts.push([
                     destination.address,
                     amount.toFixed(0)
@@ -119,4 +125,5 @@ Promise.all([
     // every 30 minutes
     lt.setInterval(checkUnreceivedTransactions, 30*60*1000)
     await checkUnreceivedTransactions()
+
 })
