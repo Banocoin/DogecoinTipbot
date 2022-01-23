@@ -89,6 +89,35 @@ const { Client, Team } = require("discord.js")
             })
         })(),
         (async () => {
+            let SBPRewardsAddress = await Address.findOne({
+                handles: "SBP.Rewards.Vitoge"
+            })
+            if(!SBPRewardsAddress){
+                await inquirerQueue.queueAction("", async () => {
+                    console.info("Creating Vitoge SBP distribution address...")
+                })
+                const wallet = vite.wallet.createWallet()
+                const addr = wallet.deriveAddress(0)
+                SBPRewardsAddress = await Address.create({
+                    network: "VITE",
+                    seed: wallet.seedHex,
+                    address: addr.address,
+                    handles: [
+                        "SBP.Rewards.Vitoge"
+                    ]
+                })
+                await inquirerQueue.queueAction("", async () => {
+                    console.warn("Please Save this mnemonic phrase somewhere safe: \x1b[33m"+wallet.mnemonics+"\x1b[37m VITOGESBPVOTERS")
+                })
+                await inquirerQueue.queueAction("", async () => {
+                    console.log("Vitoge SBP Rewards created!")
+                })
+            }
+            await inquirerQueue.queueAction("", async () => {
+                console.log("Please use this address to distribute Vitoge SBP rewards to voters: \x1b[33m"+SBPRewardsAddress.address+"\x1b[37m")
+            })
+        })(),
+        (async () => {
             let SBPClaimRewardsAddress = await Address.findOne({
                 handles: "SBPClaim.Rewards"
             })
@@ -115,6 +144,64 @@ const { Client, Team } = require("discord.js")
             }
             await inquirerQueue.queueAction("", async () => {
                 console.log("Please use this address to claim SBP rewards: \x1b[33m"+SBPClaimRewardsAddress.address+"\x1b[37m")
+            })
+        })(),
+        (async () => {
+            let SBPClaimRewardsAddress = await Address.findOne({
+                handles: "SBPClaim.Rewards.Vitoge"
+            })
+            if(!SBPClaimRewardsAddress){
+                await inquirerQueue.queueAction("", async () => {
+                    console.info("Creating Vitoge SBP Claiming Rewards address...")
+                })
+                const wallet = vite.wallet.createWallet()
+                const addr = wallet.deriveAddress(0)
+                SBPClaimRewardsAddress = await Address.create({
+                    network: "VITE",
+                    seed: wallet.seedHex,
+                    address: addr.address,
+                    handles: [
+                        "SBPClaim.Rewards.Vitoge"
+                    ]
+                })
+                await inquirerQueue.queueAction("", async () => {
+                    console.warn("Please Save this mnemonic phrase somewhere safe: \x1b[33m"+wallet.mnemonics+"\x1b[37m SBPCLAIM VITOGE")
+                })
+                await inquirerQueue.queueAction("", async () => {
+                    console.log("Vitoge SBP Claiming Rewards created!")
+                })
+            }
+            await inquirerQueue.queueAction("", async () => {
+                console.log("Please use this address to claim Vitoge SBP rewards: \x1b[33m"+SBPClaimRewardsAddress.address+"\x1b[37m")
+            })
+        })(),
+        (async () => {
+            let DAORewardsAddress = await Address.findOne({
+                handles: "DAO.Rewards"
+            })
+            if(!DAORewardsAddress){
+                await inquirerQueue.queueAction("", async () => {
+                    console.info("Creating DAO Rewards address...")
+                })
+                const wallet = vite.wallet.createWallet()
+                const addr = wallet.deriveAddress(0)
+                DAORewardsAddress = await Address.create({
+                    network: "VITE",
+                    seed: wallet.seedHex,
+                    address: addr.address,
+                    handles: [
+                        "DAO.Rewards"
+                    ]
+                })
+                await inquirerQueue.queueAction("", async () => {
+                    console.warn("Please Save this mnemonic phrase somewhere safe: \x1b[33m"+wallet.mnemonics+"\x1b[37m DAOREWARDS")
+                })
+                await inquirerQueue.queueAction("", async () => {
+                    console.log("DAO Rewards created!")
+                })
+            }
+            await inquirerQueue.queueAction("", async () => {
+                console.log("Please use this address for DAO distribution: \x1b[33m"+DAORewardsAddress.address+"\x1b[37m")
             })
         })(),
         (async () => {
