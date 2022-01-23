@@ -11,6 +11,7 @@ import { extractMention, isAddressOkayPrivate, isAddressOkayPublic } from "../ut
 import { fetchUser, fetchUserByUsername } from "../users";
 import { TweetV2, UserV2 } from "twitter-api-v2";
 import twitterqueue from "../twitterqueue";
+import { parseAmount } from "../../common/amounts";
 
 export default new class TipCommand implements Command {
     description = "Tip someone on Twitter"
@@ -97,7 +98,7 @@ https://vitescan.io/tx/${tip.txs[0][0].hash}`
             ...recipientsRaw
         ] = args
         currencyOrRecipient = currencyOrRecipient || "vitc"
-        if(!amount || !/^\d+(\.\d+)?$/.test(amount))return {
+        if(!amount)return {
             type: "help"
         }
         const currencyMention = extractMention([currencyOrRecipient])
@@ -135,10 +136,18 @@ https://vitescan.io/tx/${tip.txs[0][0].hash}`
             type: "help"
         }
 
-        const amountParsed = new BigNumber(amount)
-        if(amountParsed.isEqualTo(0)){
+        let amountParsed:BigNumber
+        try{
+            amountParsed = parseAmount(amount, tokenIds[currencyOrRecipient])
+        }catch{
             return {
-                type: "tip_zero"
+                type: "help"
+            }
+        }
+        if(convert(amountParsed, currencyOrRecipient, "RAW") === "0"){
+            return {
+                type: "tip_zero",
+                currency: currencyOrRecipient
             }
         }
 

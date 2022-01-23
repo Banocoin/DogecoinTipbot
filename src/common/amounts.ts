@@ -49,3 +49,31 @@ export function parseAmount(amount:string, currency:string){
 
     return amountParsed
 }
+export function rawFormatNumber(number:string, separator = ","){
+    if(!/^\d+(\.\d+)?$/.test(number))throw new Error("Invalid Number")
+    const decimals = number.split(".")[1]
+    const mainNumber = number.split(".")[0]
+    const offset = mainNumber.length % 3
+    let output = mainNumber.slice(0, offset)
+
+    if(offset && offset !== mainNumber.length){
+        output += separator
+    }
+
+    for(let i = 0; offset+i*3 < mainNumber.length; i++){
+        if(i !== 0){
+            output += separator
+        }
+        output += mainNumber.slice(offset+i*3, offset+i*3+3)
+    }
+
+    if(decimals){
+        return [output, decimals]
+    }
+
+    return [output]
+}
+
+export function formatNumber(number:string, separator = ","){
+    return rawFormatNumber(number, separator).join(".")
+}

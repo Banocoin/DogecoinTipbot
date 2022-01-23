@@ -1,6 +1,7 @@
 import { DMMessage, twitc } from "..";
 import { tokenIds, tokenTickers } from "../../common/constants";
 import { convert, tokenNameToDisplayName } from "../../common/convert";
+import { formatNumber } from "../../common/amounts";
 import viteQueue from "../../cryptocurrencies/viteQueue";
 import { requestWallet } from "../../libwallet/http";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
@@ -44,7 +45,7 @@ ${Object.keys(balances).map(tokenId => {
     const displayToken = tokenTickers[tokenId] || tokenId
     const displayBalance = convert(balances[tokenId], "RAW", displayToken as any)
 
-    return `${tokenNameToDisplayName(displayToken)}: ${displayBalance}`
+    return `${tokenNameToDisplayName(displayToken)}: ${formatNumber(displayBalance)}`
 }).join("\n")}`
 
 // View on vitescan: https://vitescan.io/address/${address.address}
