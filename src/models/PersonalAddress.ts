@@ -3,7 +3,8 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IPersonalAddress extends Document {
     address: string,
     id: string,
-    platform: "Discord"
+    platform: "Discord",
+    amount: string
 }
 
 const PersonalAddressSchema = new Schema<IPersonalAddress>({
@@ -18,6 +19,10 @@ const PersonalAddressSchema = new Schema<IPersonalAddress>({
         unique: true
     },
     platform: {
+        type: String,
+        required: true
+    },
+    amount: {
         type: String,
         required: true
     }
