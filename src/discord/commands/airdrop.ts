@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { allowedCoins, disabledTokens, tokenIds } from "../../common/constants";
+import { serverEmojis, allowedCoins, disabledTokens, tokenIds, defaultEmoji, AIRDROP_MIN_WHITELISTED, AIRDROP_MIN, VITABOT_GITHUB } from "../../common/constants";
 import { convert, tokenNameToDisplayName } from "../../common/convert";
 import { getVITEAddressOrCreateOne } from "../../wallet/address"
 import Command from "../command";
@@ -13,8 +13,9 @@ import { throwFrozenAccountError } from "../util";
 import Airdrop from "../../models/Airdrop";
 import { endAirdrop, getAirdropEmbed, timeoutsAirdrop, watchingAirdropMap } from "../AirdropManager";
 import { requestWallet } from "../../libwallet/http";
-import Tip from "../../models/Tip";
+import TipStats from "../../models/TipStats";
 import { parseAmount } from "../../common/amounts";
+import { BOT_OWNER } from "../constants";
 
 export default new class AirdropCommand implements Command {
     description = "Start a new Airdrop"
@@ -56,8 +57,7 @@ Examples:
             return
         }
         if(!currency){
-            await help.execute(message, [command])
-            return
+            currency = "VITC"
         }
         if(/^\d+$/.test(currency)){
             durationRaw = winnersRaw
@@ -112,24 +112,28 @@ Examples:
             parseInt(winnersRaw),
             resolveDuration(durationRaw || "5m")
         ]
+        const airdropMinStr = AIRDROP_MIN_WHITELISTED[tokenId] || AIRDROP_MIN
+        let airdropMin:BigNumber
         try{
-            await message.react("💊")
-        }catch{}
-        /*if(amount.div(winners).isLessThan(1)){
+            airdropMin = parseAmount(airdropMinStr, tokenId)
+        }catch{
+            // No price for token ? kek just discard
             try{
                 await message.react("❌")
             }catch{}
-            await message.author.send(
-                `You can't start an airdrop for less than **1 ${tokenNameToDisplayName("VITC")}** per winner.`
-            )
+            await message.reply(`This token can't be airdropped because it doesn't have a price yet. To whitelist it, please contact <@${BOT_OWNER}> or open an issue on ${VITABOT_GITHUB}.`)
             return
-        }*/
+        }
+        if(amount.isLessThan(airdropMin)){
+            await message.reply(`The minimum amount to airdrop is **${airdropMinStr} ${tokenNameToDisplayName(tokenId)}**.`)
+            return
+        }
         if(winners === 0){
             try{
                 await message.react("❌")
             }catch{}
             await message.author.send(
-                `You can't start a giveaway with 0 winners.`
+                `You can't start an airdrop with 0 winners.`
             )
             return
         }
@@ -164,6 +168,9 @@ Examples:
         }
 
         await viteQueue.queueAction(address.address, async () => {
+            try{
+                await message.react(defaultEmoji)
+            }catch{}
             const balances = await requestWallet("get_balances", address.address)
             const balance = new BigNumber(balances[tokenId] || "0")
             const totalAmountRaw = new BigNumber(convert(totalAmount, currency, "RAW"))
@@ -198,18 +205,21 @@ Examples:
                     winners: winners,
                     user_id: message.author.id,
                 }),
-                Tip.create({
+                TipStats.create({
                     amount: parseFloat(convert(totalAmountRaw, "RAW", currency)),
                     user_id: message.author.id,
-                    date: new Date(),
-                    txhash: stx.hash
+                    tokenId: tokenId,
+                    txhash: Buffer.from(stx.hash, "hex")
                 })
             ])
             try{
                 await message.react("909408282307866654")
             }catch{}
             const embed = await getAirdropEmbed(airdrop)
-            await botMessage.react("💊")
+            const emoji = serverEmojis[message.guildId] || defaultEmoji
+            try{
+                await botMessage.react(emoji)
+            }catch{}
             await botMessage.edit({
                 embeds: [embed],
                 content: null

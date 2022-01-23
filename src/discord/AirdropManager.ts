@@ -1,5 +1,5 @@
 import { client } from "."
-import { tokenIds } from "../common/constants"
+import { defaultEmoji, serverEmojis, tokenIds } from "../common/constants"
 import * as lt from "long-timeout"
 import { getVITEAddressOrCreateOne } from "../wallet/address"
 import viteQueue from "../cryptocurrencies/viteQueue"
@@ -10,7 +10,7 @@ import { convert, tokenIdToName, tokenNameToDisplayName } from "../common/conver
 import BigNumber from "bignumber.js"
 import { requestWallet } from "../libwallet/http"
 import { tokenPrices } from "../common/price"
-import { generateDefaultEmbed } from "./util"
+import { generateDefaultEmbed, ID_PATTERN } from "./util"
 
 export const watchingAirdropMap = new Map<string, IAirdrop>()
 export const timeoutsAirdrop = new Map<string, lt.Timeout>()
@@ -20,6 +20,13 @@ export async function searchAirdrops(){
         const message = reaction.message
         const airdrop = watchingAirdropMap.get(message.id)
         if(!airdrop)return
+        console.log(reaction.emoji.id || reaction.emoji.name, serverEmojis[reaction.message.guildId])
+        if(serverEmojis[reaction.message.guildId]){
+            if(reaction.emoji.id !== serverEmojis[reaction.message.guildId] && reaction.emoji.name !== serverEmojis[reaction.message.guildId])return reaction.remove().then(()=>{})
+        }else{
+            if(reaction.emoji.name !== defaultEmoji && reaction.emoji.id !== defaultEmoji)return reaction.remove().then(()=>{})
+        }
+
         // substract 1 for the bot's reaction
         if(airdrop.winners <= reaction.count-1){
             // airdrop should end
@@ -59,6 +66,12 @@ export async function getAirdropEmbed(airdrop:IAirdrop, winners = []){
         })
     })
 
+    let emoji = serverEmojis[airdrop.guild_id] || defaultEmoji
+    if(ID_PATTERN.test(emoji)){
+        const em = client.emojis.cache.get(emoji)
+        emoji = em.toString() || defaultEmoji
+    }
+
     const endTime = Math.floor(airdrop.date.getTime()/1000)
     const ended = airdrop.date.getTime() <= Date.now()
     let totalFiatValue = new BigNumber(0)
@@ -81,13 +94,13 @@ ${Object.entries(balances).map(tkn => {
     totalFiatValue = totalFiatValue.plus(fiatValue)
 
     return `    **${displayBalance} ${tokenNameToDisplayName(tkn[0])}** (= **$${
-        fiatValue.toFixed(2, BigNumber.ROUND_DOWN)
+        fiatValue.decimalPlaces(2).toFixed(2)
     }**)`
 }).join("\n")}
 
 [Link to Wallet](https://vitescan.io/address/${address.address})
 
-${!ended ? "**React with 💊 to participate!**" : ""}`)
+${!ended ? `**React with ${emoji} to participate!**` : ""}`)
     return embed
 }
 
@@ -102,30 +115,35 @@ export async function endAirdrop(airdrop:IAirdrop){
             return
         }
         const message = await channel.messages.fetch(airdrop.message_id)
-        const reaction = message.reactions.resolve("💊")
-        await reaction.fetch()
+        const emoji = serverEmojis[message.guildId] || defaultEmoji
+        const reactions = [message.reactions.resolve(emoji)]
         const validUsers = []
-        let shouldFetch = true
-        let lastId = null
-        while(shouldFetch){
-            console.log("Fetching reactions after "+lastId)
-            const u = await reaction.users.fetch({
-                limit: 100,
-                after: lastId
-            })
-            if(u.size < 100){
-                shouldFetch = false
-            }
-            if(u.size > 0){
-                lastId = u.last().id
-            }
-            for(const user of u.values()){
-                if(user.bot || user.system)continue
-                if(airdrop.winners <= validUsers.length){
+        for(const reaction of reactions){
+            if(!reaction)continue
+            await reaction.fetch()
+            let shouldFetch = true
+            let lastId = null
+            while(shouldFetch){
+                console.log("Fetching reactions after "+lastId)
+                const u = await reaction.users.fetch({
+                    limit: 100,
+                    after: lastId
+                })
+                if(u.size < 100){
                     shouldFetch = false
-                    break
                 }
-                validUsers.push(user)
+                if(u.size > 0){
+                    lastId = u.last().id
+                }
+                for(const user of u.values()){
+                    if(user.bot || user.system)continue
+                    if(airdrop.winners <= validUsers.length){
+                        shouldFetch = false
+                        break
+                    }
+                    if(validUsers.includes(user))continue
+                    validUsers.push(user)
+                }
             }
         }
         const embed = await getAirdropEmbed(airdrop, validUsers)
