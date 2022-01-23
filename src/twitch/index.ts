@@ -103,7 +103,7 @@ View transaction on vitescan: https://vitescan.io/tx/${transaction.hash}`
     
     
 
-    client.on("message", async (channel, tags, message, self) => {
+    client.on("message", async (channel, tags, message) => {
         if(false || tags["message-type"] === "action")return
 
         if(!message.startsWith("!"))return

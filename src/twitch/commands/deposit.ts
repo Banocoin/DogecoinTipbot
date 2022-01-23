@@ -16,9 +16,9 @@ export default new class TestCommand extends Command {
     usage = ""
 
     async executePrivate?(channel:string, tags:ChatUserstate):Promise<void>{
-        await this.sendDepositAddress(tags["user-id"], tags.username)
+        await this.sendDepositAddress(channel, tags["user-id"], tags.username)
     }
-    async sendDepositAddress(user_id:string, username:string){
+    async sendDepositAddress(channel:string, user_id:string, username:string){
         const address = await twitchqueue.queueAction(user_id, async () => {
             return getVITEAddressOrCreateOne(user_id, "Twitter")
         })
