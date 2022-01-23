@@ -9,7 +9,7 @@ import { AddressValidator, AmountValidator, TokenIdValidator, WalletAddressValid
 import viteQueue from "../viteQueue";
 import Joi from "joi";
 
-export default async function bulkSendAction(fromAddress: string, payouts: [string, string][], tokenId: string){
+export default async function bulkSendAction(fromAddress: string, payouts: [string, string][], tokenId: string, timeout = 0){
     await WalletAddressValidator.validateAsync(fromAddress)
     await Joi.array().items(
         Joi.array().items(
@@ -49,7 +49,7 @@ export default async function bulkSendAction(fromAddress: string, payouts: [stri
             throw new BalanceError("Insufficient balance")
         }
 
-        return bulkSend(address, payouts, tokenId)
+        return bulkSend(address, payouts, tokenId, timeout)
     })
 
     return txs
