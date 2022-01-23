@@ -3,20 +3,20 @@ import { Message } from "discord.js";
 import { tokenIds } from "../../common/constants";
 import { tokenNameToDisplayName } from "../../common/convert";
 import { tokenPrices } from "../../common/price";
-import TipStats from "../../models/TipStats";
+import BurnStats from "../../models/BurnStats";
 import Command from "../command";
-import { VITC_ADMINS, whitelistedBots } from "../constants";
+import { VITC_ADMINS } from "../constants";
 import { generateDefaultEmbed, parseDiscordUser } from "../util";
 
-export default new class TopTippersCommand implements Command {
-    description = "See the bot's top tippers"
-    extended_description = `Display a list of the best tippers.
+export default new class TopBurnersCommand implements Command {
+    description = "See the bot's top burners"
+    extended_description = `Display a list of the best burners.
 
 Examples:
-**See top tippers**
-.toptippers`
+**See top burners**
+.topburners`
 
-    alias = ["toptippers"]
+    alias = ["topburners"]
     usage = ""
 
     async execute(message:Message, args:string[]){
@@ -31,10 +31,10 @@ Examples:
         const token = tokenIds[currency]
         const adminsOnly = args[1] === "admins"
         const [
-            topTippers,
-            totalTipped
+            topBurners,
+            totalBurnt
         ] = await Promise.all([
-            TipStats.aggregate([
+            BurnStats.aggregate([
                 {
                     $match: {
                         tokenId: token
@@ -49,7 +49,7 @@ Examples:
                     }
                 }
             ]),
-            TipStats.aggregate([
+            BurnStats.aggregate([
                 {
                     $match: {
                         tokenId: token
@@ -65,17 +65,16 @@ Examples:
                 }
             ])
         ])
-        const topTipps = topTippers
+        const topBurnns = topBurners
         .filter(e => {
-            if(whitelistedBots.includes(e._id))return false
             if(token === tokenIds.VITC)return !adminsOnly ? !VITC_ADMINS.includes(e._id) : VITC_ADMINS.includes(e._id)
             return true
         })
         .sort((a, b) => b.sum-a.sum)
         .slice(0, 15)
         
-        const Tippers = await Promise.all(
-            topTipps.map(async e => {
+        const burners = await Promise.all(
+            topBurnns.map(async e => {
                 return {
                     amount: e.sum,
                     user: (await parseDiscordUser(e._id))[0]
@@ -84,24 +83,24 @@ Examples:
         )
         
         let totalAmount = 0
-        if(totalTipped[0]){
-            totalAmount = Math.floor(totalTipped[0].amount*100)/100
+        if(totalBurnt[0]){
+            totalAmount = Math.floor(totalBurnt[0].amount*100)/100
         }
 
         const pair = tokenPrices[token+"/"+tokenIds.USDT]
 
         const embed = generateDefaultEmbed()
-        .setDescription(`**Top 15 Tippers 🔥**
+        .setDescription(`**Top 15 Burners 🔥**
         
-${Tippers.map((Tiper, i) => {
-    return `${i+1}. **${Math.floor(Tiper.amount*100)/100} ${currency}**  (= **$${
+${burners.map((burner, i) => {
+    return `${i+1}. **${Math.floor(burner.amount*100)/100} ${currency}**  (= **$${
         new BigNumber(pair?.closePrice || 0)
-            .times(Tiper.amount)
+            .times(burner.amount)
             .decimalPlaces(2).toFixed(2)
-    }**) - By **${Tiper.user?.tag}${i==0?" 👑":""}**`
+    }**) - By **${burner.user?.tag}${i==0?" 👑":""}**`
 }).join("\n") || "Looks like the list is empty..."}
 
-Total Amount Tipped: **${totalAmount} ${tokenNameToDisplayName(currency)}** (= **$${
+Total Amount Burnt: **${totalAmount} ${tokenNameToDisplayName(currency)}** (= **$${
     new BigNumber(pair?.closePrice || 0)
         .times(totalAmount)
         .decimalPlaces(2).toFixed(2)

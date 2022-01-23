@@ -4,18 +4,20 @@ import {promises as fs} from "fs"
 import { join } from "path"
 import Command from "./command"
 import { generateDefaultEmbed, parseDiscordUser } from "./util"
-import { tokenTickers, VITABOT_GITHUB } from "../common/constants"
+import { disabledServers, tokenTickers, VITABOT_GITHUB } from "../common/constants"
 import { dbPromise } from "../common/load-db"
-import { FAUCET_CHANNEL_ID, FAUCET_CHANNEL_ID_VITAMINHEAD, initFaucet } from "./faucet"
+import { FAUCET_CHANNEL_ID, FAUCET_CHANNEL_ID_VITAMINHEAD, NEW_FAUCET_CHANNEL_ID, initFaucet } from "./faucet"
 import { getAirdropEmbed, searchAirdrops, watchingAirdropMap } from "./AirdropManager"
 import { durationUnits } from "../common/util"
 import { searchGiveaways } from "./GiveawayManager"
 import { walletConnection } from "../cryptocurrencies/vite"
 import Address from "../models/Address"
 import { convert, tokenNameToDisplayName } from "../common/convert"
-import { VITC_ADMINS } from "./constants"
+import { allowedServersBots, VITC_ADMINS, whitelistedBots } from "./constants"
 import { parseTransactionType } from "../wallet/address"
 import "./ModsDistributionManager"
+import { createDMQueue, nocheckcache } from "./antispambypass"
+import DiscordDMChannel from "../models/DiscordDMChannel"
 
 export const discordBotId = process.argv[2]
 export const deprecatedBots = process.env.DISCORD_DEPRECATED_BOT.split(",")
@@ -69,23 +71,6 @@ client.on("ready", async () => {
     if(publicBot !== client.user.id && !deprecatedBots.includes(client.user.id)){
         // private bot
         initFaucet()
-
-        walletConnection.on("sbp_rewards", async message => {
-            const channel = client.channels.cache.get("907343213822623825") as TextChannel
-            if(!channel)return
-            const text = `Today's 💊 voter rewards were sent!
-
-**${Math.round(parseFloat(convert(message.vite, "RAW", "VITE")))} ${tokenNameToDisplayName("VITE")}**!
-
-And
-
-**${Math.round(parseFloat(convert(message.vitc, "RAW", "VITC")))} ${tokenNameToDisplayName("VITC")}**!
-
-Thanks to all our voters!`
-
-            const msg = await channel.send(text)
-            await msg.crosspost()
-        })
         
         walletConnection.on("tx", async transaction => {
             if(transaction.type !== "receive")return
@@ -160,23 +145,6 @@ View transaction on vitescan: https://vitescan.io/tx/${transaction.hash}`
     }else if(publicBot === client.user.id){
         // public bot
         initFaucet()
-
-        walletConnection.on("sbp_rewards", async message => {
-            const channel = client.channels.cache.get("888496337799245874") as TextChannel
-            if(!channel)return
-            const text = `Today's 💊 voter rewards were sent!
-
-**${Math.round(parseFloat(convert(message.vite, "RAW", "VITE")))} ${tokenNameToDisplayName("VITE")}**!
-
-And
-
-**${Math.round(parseFloat(convert(message.vitc, "RAW", "VITC")))} ${tokenNameToDisplayName("VITC")}**!
-
-Thanks to all our voters!`
-
-            const msg = await channel.send(text)
-            await msg.crosspost()
-        })
         
         walletConnection.on("tx", async transaction => {
             if(transaction.type !== "receive")return
@@ -238,14 +206,23 @@ client.on("messageCreate", async message => {
             }
         })
     }
+    if([FAUCET_CHANNEL_ID, FAUCET_CHANNEL_ID_VITAMINHEAD, NEW_FAUCET_CHANNEL_ID].includes(message.channel.id)){
         if(!VITC_ADMINS.includes(message.author.id))return
     }
     if(botRegexp.test(message.content)){
         message.reply("Hi! If you're wondering, my prefix is `"+prefix+"`! You can see my list of commands by doing `"+prefix+"help`! 💊")
         return
     }
+    // lol bananoman servers
+    if(disabledServers[message.guildId])return
     if(!message.content.startsWith(prefix))return
-    if(message.author.bot)return
+    if(message.author.bot){
+        // exceptions lol
+        if(!whitelistedBots.includes(message.author.id))return
+        if(allowedServersBots[message.author.id]){
+            if(!allowedServersBots[message.author.id].includes(message.guildId))return
+        }
+    }
     const args = message.content.slice(prefix.length).trim().split(/ +/g)
     const command = args.shift().toLowerCase()
 

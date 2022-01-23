@@ -1,11 +1,11 @@
 import { Message } from "discord.js";
 import { commands, rawCommands } from "..";
-import { BOT_VERSION } from "../../common/constants";
+import { BOT_VERSION, defaultEmoji } from "../../common/constants";
 import Command from "../command";
 import { generateDefaultEmbed } from "../util";
 
 export default new class HelpCommand implements Command {
-    description = "💊"
+    description = defaultEmoji
     extended_description = `This is the **help** command. You'll find a lot of informations on other commands of the bot.
     
 **<argument>** are **mandatory** arguments

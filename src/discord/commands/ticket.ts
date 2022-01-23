@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { tokenIds } from "../../common/constants";
+import { defaultEmoji, tokenIds } from "../../common/constants";
 import { convert, tokenNameToDisplayName } from "../../common/convert";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
 import viteQueue from "../../cryptocurrencies/viteQueue";
@@ -8,7 +8,7 @@ import GiveawayEntry from "../../models/GiveawayEntry";
 import Command from "../command";
 import discordqueue from "../discordqueue";
 import BigNumber from "bignumber.js"
-import Tip from "../../models/Tip";
+import TipStats from "../../models/TipStats";
 import { refreshBotEmbed } from "../GiveawayManager";
 import { requestWallet } from "../../libwallet/http";
 import { findDiscordRainRoles } from "../util";
@@ -31,7 +31,7 @@ ${process.env.DISCORD_PREFIX}ticket`
             return
         }
         try{
-            await message.react("💊")
+            await message.react(defaultEmoji)
         }catch{}
         const roles = await findDiscordRainRoles(message.guildId)
         if(roles.length > 0){
@@ -113,11 +113,11 @@ ${process.env.DISCORD_PREFIX}ticket`
                         date: new Date(),
                         txhash: tx.hash
                     }),
-                    Tip.create({
+                    TipStats.create({
                         amount: giveaway.fee,
                         user_id: message.author.id,
-                        date: new Date(),
-                        txhash: tx.hash
+                        tokenId: tokenIds.VITC,
+                        txhash: Buffer.from(tx.hash, "hex")
                     })
                 ])
                 try{

@@ -3,7 +3,7 @@ import { durationUnits } from "../../common/util";
 import ActiveStats from "../../models/ActiveStats";
 import ActiveStatus from "../../models/ActiveStatus";
 import Command from "../command";
-import { VITC_ADMINS } from "../constants";
+import { VITC_ADMINS, VITC_MODS } from "../constants";
 import { generateDefaultEmbed } from "../util";
 
 export default new class ActiveCommand implements Command {
@@ -14,7 +14,17 @@ export default new class ActiveCommand implements Command {
     hidden = true
 
     async execute(message:Message){
-        if(!VITC_ADMINS.includes(message.author.id))return
+        if(!message.guild){
+            try{
+                await message.react("❌")
+            }catch{}
+            return
+        }
+        if(
+            !VITC_ADMINS.includes(message.author.id) && 
+            !VITC_MODS.includes(message.author.id) &&
+            !message.member.permissions.has("MANAGE_CHANNELS")
+        )return
 
         const [
             lastMessages,
@@ -70,6 +80,15 @@ export default new class ActiveCommand implements Command {
         }
 
         const list = lastMessages.sort((a, b) => {
+            const [
+                activiaA,
+                activiaB
+            ] = [
+                activia.find(e => e.user_id === a._id),
+                activia.find(e => e.user_id === b._id)
+            ]
+            if(activiaB && !activiaA)return 1
+            if(activiaA && !activiaB)return -1
             return messageCountForUser(b)-messageCountForUser(a)
         }).map(user => {
             const isActive = !!activia.find(e => e.user_id === user._id)
@@ -83,11 +102,32 @@ export default new class ActiveCommand implements Command {
                 isActive ? "**" : ""
             }`
         })
-        const embed = generateDefaultEmbed()
-        .setTitle(`${activia.length} Active Members`)
-        .setDescription(list.join("\n"))
-        await message.reply({
-            embeds: [embed]
-        })
+        let first = true
+        while(list[0]){
+            let newLength = -1
+            const newList = []
+            while(list[0] && newLength + list[0].length + 1 < 4096){
+                const elem = list.shift()
+                newList.push(elem)
+                newLength += 1 + elem.length
+            }
+            const embed = generateDefaultEmbed()
+            .setTitle(`${activia.length} Active Members`)
+            .setDescription(newList.join("\n"))
+
+            const msg = await message.channel.send({
+                embeds: [embed],
+                ...(first ? {
+                    reply: {
+                        messageReference: message,
+                        failIfNotExists: false
+                    }
+                } : {})
+            })
+            setTimeout(() => {
+                msg.delete()
+            }, 600000)
+            first = false
+        }
     }
 }

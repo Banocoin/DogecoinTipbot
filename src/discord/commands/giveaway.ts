@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { tokenIds } from "../../common/constants";
+import { defaultEmoji, tokenIds } from "../../common/constants";
 import { convert, tokenNameToDisplayName } from "../../common/convert";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
 import Command from "../command";
@@ -13,7 +13,7 @@ import Giveaway from "../../models/Giveaway";
 import { findDiscordRainRoles, throwFrozenAccountError } from "../util";
 import GiveawayEntry from "../../models/GiveawayEntry";
 import { endGiveaway, giveawayQueue, resolveGiveaway, startGiveaway, timeoutsGiveway, watchingGiveawayMap } from "../GiveawayManager";
-import Tip from "../../models/Tip";
+import TipStats from "../../models/TipStats";
 import { requestWallet } from "../../libwallet/http";
 import { parseAmount } from "../../common/amounts";
 
@@ -83,12 +83,12 @@ Examples:
             tokenIds[currency],
             resolveDuration(durationRaw),
             new BigNumber(
-                new BigNumber(feeRaw)
+                parseAmount(feeRaw, tokenIds[currency])
                 .toFixed(2)
             )
         ]
         try{
-            await message.react("💊")
+            await message.react(defaultEmoji)
         }catch{}
         if(baseAmount.isLessThan(100)){
             try{
@@ -163,7 +163,7 @@ Examples:
 
             const giveaway = await viteQueue.queueAction(address.address, async () => {
                 try{
-                    await message.react("💊")
+                    await message.react(defaultEmoji)
                 }catch{}
                 const balances = await requestWallet("get_balances", address.address)
                 const balance = new BigNumber(balances[tokenId] || "0")
@@ -205,11 +205,11 @@ Examples:
                         date: new Date(),
                         txhash: stx.hash
                     }),
-                    Tip.create({
+                    TipStats.create({
                         amount: parseFloat(fee.toFixed()),
                         user_id: message.author.id,
-                        date: new Date(),
-                        txhash: stx.hash
+                        tokenId: tokenId,
+                        txhash: Buffer.from(stx.hash, "hex")
                     })
                 ])
                 // money locked

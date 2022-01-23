@@ -1,5 +1,5 @@
 import { client, sentHashes } from "."
-import { tokenIds, VITABOT_GITHUB } from "../common/constants"
+import { defaultEmoji, tokenIds, VITABOT_GITHUB } from "../common/constants"
 import { durationUnits } from "../common/util"
 import { getVITEAddressOrCreateOne } from "../wallet/address"
 import viteQueue from "../cryptocurrencies/viteQueue"
@@ -85,7 +85,7 @@ export async function initFaucet(){
         }
         try{
             try{
-                await message.react("💊")
+                await message.react(defaultEmoji)
             }catch{}
             const recipient = await discordqueue.queueAction(message.author.id, async () => {
                 return getVITEAddressOrCreateOne(message.author.id, "Discord")

@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { tokenIds } from "../../common/constants";
+import { defaultEmoji, tokenIds } from "../../common/constants";
 import { convert, tokenNameToDisplayName } from "../../common/convert";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
 import Command from "../command";
@@ -10,7 +10,7 @@ import viteQueue from "../../cryptocurrencies/viteQueue";
 import { client } from "..";
 import { randomFromArray } from "../../common/util";
 import { throwFrozenAccountError } from "../util";
-import Tip from "../../models/Tip";
+import TipStats from "../../models/TipStats";
 import { getActiveUsers } from "../ActiviaManager";
 import { requestWallet } from "../../libwallet/http";
 import { parseAmount } from "../../common/amounts";
@@ -42,7 +42,7 @@ Examples:
         const amount = parseAmount(amountRaw, tokenIds.VITC)
         if(amount.isLessThan(10)){
             try{
-                await message.react("💊")
+                await message.react(defaultEmoji)
             }catch{}
             try{
                 await message.react("❌")
@@ -77,7 +77,7 @@ Examples:
 
         await viteQueue.queueAction(address.address, async () => {
             try{
-                await message.react("💊")
+                await message.react(defaultEmoji)
             }catch{}
             const balances = await requestWallet("get_balances", address.address)
             const token = tokenIds.VITC
@@ -99,13 +99,13 @@ Examples:
                 totalAskedRaw.toFixed(),
                 token
             )
-            await Tip.create({
+            await TipStats.create({
                 amount: parseFloat(
                     convert(totalAskedRaw, "RAW", "VITC")
                 ),
                 user_id: message.author.id,
-                date: new Date(),
-                txhash: tx.hash
+                tokenId: token,
+                txhash: Buffer.from(tx.hash, "hex")
             })
             try{
                 await message.react("909408282307866654")
@@ -113,7 +113,7 @@ Examples:
             try{
                 const u = await client.users.fetch(user)
                 await message.author.send({
-                    content: `Tipped ${convert(totalAskedRaw, "RAW", "VITC")} VITC to ${u.tag}!`,
+                    content: `Tipped **${convert(totalAskedRaw, "RAW", "VITC")} ${tokenNameToDisplayName("VITC")}** to <@${u.id}> (${u.tag})!`,
                     allowedMentions: {
                         users: [user]
                     }

@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { tokenIds } from "../../common/constants";
+import { defaultEmoji, tokenIds } from "../../common/constants";
 import { convert } from "../../common/convert";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
 import Command from "../command";
@@ -72,7 +72,7 @@ export default new class EmptyCommand implements Command {
 
         await viteQueue.queueAction(address.address, async () => {
             try{
-                await message.react("💊")
+                await message.react(defaultEmoji)
             }catch{}
             const balances = await requestWallet("get_balances", address.address)
             const token = isRawTokenId ? currencyOrRecipient : tokenIds[currencyOrRecipient]

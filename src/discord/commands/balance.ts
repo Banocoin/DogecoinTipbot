@@ -32,21 +32,12 @@ export default new class BalanceCommand implements Command {
         if(tokenIds["VINU-000"]){
             delete balances[tokenIds["VINU-000"]]
         }
-        const lines = [
-            //"**Currency**",
-            //""
-        ]
-        let maxLength1 = 0//lines[0].length-4
-        for(const tokenId in balances){
-            const name = tokenNameToDisplayName(tokenId)
-            lines.push(`**${name}**`)
-            maxLength1 = Math.max(maxLength1, name.length)
-        }
-        //lines[0] += /*" ".repeat(maxLength1-lines[0].length)+*/" **Balance**"
-        let i = 0
+        const lines = []
         let totalPrice = new BigNumber(0)
         for(const tokenId in balances){
-            let line = lines[i]
+            const name = tokenNameToDisplayName(tokenId)
+            let line = `**${name}**`
+
             const displayToken = tokenTickers[tokenId] || tokenId
             const displayBalance = convert(balances[tokenId], "RAW", displayToken as any)
 
@@ -54,41 +45,24 @@ export default new class BalanceCommand implements Command {
 
             const fiat = new BigNumber(pair?.closePrice || 0)
                 .times(displayBalance)
-                .toFixed(2, BigNumber.ROUND_DOWN)
+                .decimalPlaces(2).toFixed(2)
             const bal = `${displayBalance} ${tokenTickers[tokenId] ? `**${tokenTickers[tokenId]}** ` : ""}(= **$${
                 fiat
             }**)`
-            line += /*" ".repeat(maxLength1-line.length+4)+*/" "+bal
-            lines[i] = line
-            i++
+            line += " "+bal
+            lines.push(line)
+            
             totalPrice = totalPrice.plus(fiat)
         }
+
         lines.push("")
-        lines.push(`Total Value: **$${totalPrice.toFixed(2)}**`)
+        lines.push(`Total Value: **$${totalPrice.decimalPlaces(2).toFixed(2)}**`)
 
         const embed = generateDefaultEmbed()
-        .setAuthor("View on vitescan.io", undefined, `https://vitescan.io/address/${address.address}`)
-        /*.addField("Currency", Object.keys(balances).map(tokenId => {
-            const displayToken = tokenId
-
-            return `**${tokenNameToDisplayName(displayToken)}**`
-        }).join("\n"), true)
-        .addField("Balance", Object.keys(balances).map(tokenId => {
-            const displayToken = tokenTickers[tokenId] || tokenId
-            const displayBalance = convert(balances[tokenId], "RAW", displayToken as any)
-
-            const pair = tokenPrices[tokenId+"/"+tokenIds.USDT]
-
-            return `${displayBalance} ${tokenTickers[tokenId] ? `**${tokenTickers[tokenId]}** ` : ""}(= **$${
-                new BigNumber(
-                    new BigNumber(pair?.closePrice || 0)
-                        .times(displayBalance)
-                        .times(100)
-                        .toFixed(0)
-                ).div(100)
-                .toFixed()
-            }**)`
-        }).join("\n"), true)*/
+        .setAuthor({
+            name: "View on vitescan.io",
+            url: `https://vitescan.io/address/${address.address}`
+        })
         .setDescription(lines.join("\n"))
         await message.author.send({
             embeds: [embed]

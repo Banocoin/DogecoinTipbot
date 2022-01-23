@@ -1,5 +1,5 @@
 import { Message, VoiceChannel } from "discord.js";
-import { tokenIds } from "../../common/constants";
+import { defaultEmoji, tokenIds } from "../../common/constants";
 import { convert, tokenNameToDisplayName } from "../../common/convert";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
 import Command from "../command";
@@ -9,7 +9,7 @@ import BigNumber from "bignumber.js"
 import viteQueue from "../../cryptocurrencies/viteQueue";
 import { client } from "..";
 import { throwFrozenAccountError, findDiscordRainRoles } from "../util";
-import Tip from "../../models/Tip";
+import TipStats from "../../models/TipStats";
 import { VITC_ADMINS } from "../constants";
 import { requestWallet, BulkSendResponse } from "../../libwallet/http";
 
@@ -97,7 +97,7 @@ Examples:
 
         await viteQueue.queueAction(address.address, async () => {
             try{
-                await message.react("💊")
+                await message.react(defaultEmoji)
             }catch{}
             const balances = await requestWallet("get_balances", address.address)
             const token = tokenIds.VITC
@@ -122,13 +122,13 @@ Examples:
                 token
             )
             const hash = txs[0][0].hash
-            await Tip.create({
+            await TipStats.create({
                 amount: parseFloat(
                     convert(totalAskedRaw, "RAW", "VITC")
                 ),
+                tokenId: tokenIds.VITC,
                 user_id: message.author.id,
-                date: new Date(),
-                txhash: hash
+                txhash: Buffer.from(hash, "hex")
             })
             try{
                 await message.react("909408282307866654")

@@ -6,6 +6,8 @@ import * as vite from "@vite/vitejs"
 import { client } from "..";
 import discordqueue from "../discordqueue";
 import PersonalAddress from "../../models/PersonalAddress";
+import { parseAmount } from "../../common/amounts";
+import { tokenIds } from "../../common/constants";
 
 export default new class SMACommand implements Command {
     description = "you shouldn't see this"
@@ -44,8 +46,19 @@ export default new class SMACommand implements Command {
             return
         }
 
+        let amount = "30000"
         if(args[1] !== "none"){
             addr = args[1]
+            if(args[2]){
+                // just validate
+                try{
+                    parseAmount(args[2], tokenIds.VITC)
+                }catch(err){
+                    await message.reply("Invalid amount: "+args[2])
+                    return
+                }
+                amount = args[2]
+            }
         }
 
         await discordqueue.queueAction(user.id, async () => {
@@ -62,7 +75,8 @@ export default new class SMACommand implements Command {
                 const address = await PersonalAddress.create({
                     address: addr,
                     id: user.id,
-                    platform: "Discord"
+                    platform: "Discord",
+                    amount: amount
                 })
                 await message.reply(`**${user.tag}** was added to mod distribution. ${address.address}`)
             }else{

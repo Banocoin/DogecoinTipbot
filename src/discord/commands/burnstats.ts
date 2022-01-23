@@ -3,18 +3,18 @@ import { Message } from "discord.js";
 import { tokenIds } from "../../common/constants";
 import { tokenNameToDisplayName } from "../../common/convert";
 import { tokenPrices } from "../../common/price";
-import TipStats from "../../models/TipStats";
+import BurnStats from "../../models/BurnStats";
 import Command from "../command";
 
 export default new class TipStatsCommand implements Command {
-    description = "Your tiping stats"
-    extended_description = `Display your tiping stats.
+    description = "Your burning stats"
+    extended_description = `Display your burning stats.
 
 Examples:
 **See statistics**
 .tipstats`
 
-    alias = ["tipstats"]
+    alias = ["burnstats"]
     usage = ""
 
     async execute(message:Message, args: string[]){
@@ -28,15 +28,15 @@ Examples:
         }
         const token = tokenIds[currency]
         const [
-            numOfTips,
+            numOfBurns,
             total,
             biggest
         ] = await Promise.all([
-            TipStats.countDocuments({
+            BurnStats.countDocuments({
                 user_id: message.author.id,
                 tokenId: token
             }),
-            TipStats.aggregate([
+            BurnStats.aggregate([
                 {
                     $match: {
                         user_id: message.author.id,
@@ -52,7 +52,7 @@ Examples:
                     }
                 }
             ]),
-            TipStats.find({
+            BurnStats.find({
                 user_id: message.author.id,
                 tokenId: token
             }).sort({amount: -1}).limit(1)
@@ -69,13 +69,13 @@ Examples:
         
         const pair = tokenPrices[token+"/"+tokenIds.USDT]
 
-        await message.reply(`You made **${numOfTips}** tips totalling **${
+        await message.reply(`You made **${numOfBurns}** burns totalling **${
             totalAmount
         } ${tokenNameToDisplayName(currency)}** (= **$${
             new BigNumber(pair?.closePrice || 0)
                 .times(totalAmount)
                 .decimalPlaces(2).toFixed(2)
-        }**). Your biggest tip of all time is **${
+        }**). Your biggest burn of all time is **${
             biggestAmount
         } ${tokenNameToDisplayName(currency)}** (= **$${
             new BigNumber(pair?.closePrice || 0)

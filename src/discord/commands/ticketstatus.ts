@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Message } from "discord.js";
-import { tokenIds } from "../../common/constants";
+import { defaultEmoji, tokenIds } from "../../common/constants";
 import { tokenNameToDisplayName } from "../../common/convert";
 import { tokenPrices } from "../../common/price";
 import Giveaway from "../../models/Giveaway";
@@ -26,7 +26,7 @@ ${process.env.DISCORD_PREFIX}ts`
             return
         }
         try{
-            await message.react("💊")
+            await message.react(defaultEmoji)
         }catch{}
         const giveaway = await Giveaway.findOne({
             guild_id: message.guildId
@@ -56,7 +56,7 @@ ${process.env.DISCORD_PREFIX}ts`
         .setDescription(`Fee paid: **${giveaway.fee} ${tokenNameToDisplayName("VITC")}** (= **$${
             new BigNumber(pair?.closePrice || 0)
                 .times(giveaway.fee)
-                .toFixed(2, BigNumber.ROUND_DOWN)
+                .decimalPlaces(2).toFixed(2)
         }**)
 Entered **<t:${Math.floor(entry.date.getTime()/1000)}:R>**
 [View Vitescan](https://vitescan.io/tx/${entry.txhash})`)

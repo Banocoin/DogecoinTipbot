@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { tokenIds } from "../../common/constants";
+import { allowedCoins, defaultEmoji, disabledTokens, RAIN_MIN, RAIN_MIN_WHITELISTED, tokenDecimals, tokenIds, tokenTickers, VITABOT_GITHUB } from "../../common/constants";
 import { convert, tokenNameToDisplayName } from "../../common/convert";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
 import Command from "../command";
@@ -8,10 +8,12 @@ import help from "./help";
 import BigNumber from "bignumber.js"
 import viteQueue from "../../cryptocurrencies/viteQueue";
 import { throwFrozenAccountError } from "../util";
-import Tip from "../../models/Tip";
+import TipStats from "../../models/TipStats";
 import { getActiveUsers } from "../ActiviaManager";
 import { BulkSendResponse, requestWallet } from "../../libwallet/http";
 import { parseAmount } from "../../common/amounts";
+import { BOT_OWNER } from "../constants";
+import { tokenPrices } from "../../common/price";
 
 export default new class RainCommand implements Command {
     description = "Tip active users"
@@ -21,10 +23,12 @@ If they don't have an account on the tipbot, it will create one for them.
 
 Examples:
 **Rain 1000 ${tokenNameToDisplayName("VITC")} !**
-.vrain 1000`
+.rain 1000
+**Rain 10 ${tokenNameToDisplayName("VITE")} !**
+.rain 10 vite`
 
-    alias = ["vrain", "rain", "vitaminrain"]
-    usage = "<amount>"
+    alias = ["vrain", "rain", "vitaminrain", "snow"]
+    usage = "<amount> {currency}"
 
     async execute(message:Message, args: string[], command: string){
         if(!message.guild){
@@ -38,9 +42,46 @@ Examples:
             await help.execute(message, [command])
             return
         }
-        const amount = parseAmount(amountRaw, tokenIds.VITC)
-        if(amount.isLessThan(50)){
-            await message.reply(`The minimum amount to rain is **50 ${tokenNameToDisplayName("VITC")}**.`)
+        const currency = (args[1] || "vitc").toUpperCase()
+        if(!(currency in tokenIds)){
+            try{
+                await message.react("❌")
+            }catch{}
+            await message.reply(`The token **${currency}** isn't supported.`)
+            return
+        }
+        if((tokenIds[currency] in disabledTokens)){
+            try{
+                await message.react("❌")
+            }catch{}
+            await message.author.send(`The token **${currency}** is currently disabled, because: ${disabledTokens[tokenIds[currency]]}`)
+            return
+        }
+        if(!(allowedCoins[message.guildId] || [tokenIds[currency]]).includes(tokenIds[currency])){
+            try{
+                await message.react("❌")
+            }catch{}
+            await message.reply(
+                `You can't use **${tokenNameToDisplayName(currency)}** (${currency}) in this server.`
+            )
+            return
+        }
+        const token = tokenIds[currency]
+        const amount = parseAmount(amountRaw, token)
+        const rainMinStr = RAIN_MIN_WHITELISTED[token] || RAIN_MIN
+        let rainMin:BigNumber
+        try{
+            rainMin = parseAmount(rainMinStr, token)
+        }catch{
+            // No price for token ? kek just discard
+            try{
+                await message.react("❌")
+            }catch{}
+            await message.reply(`This token can't be rained because it doesn't have a price yet. To whitelist it, please contact <@${BOT_OWNER}> or open an issue on ${VITABOT_GITHUB}.`)
+            return
+        }
+        if(amount.isLessThan(rainMin)){
+            await message.reply(`The minimum amount to rain is **${rainMinStr} ${tokenNameToDisplayName(token)}**.`)
             return
         }
         const userList = (await getActiveUsers(message.guildId))
@@ -51,8 +92,8 @@ Examples:
         }
         const individualAmount = new BigNumber(
             amount.div(userList.length)
-            .times(100).toFixed(0)
-        ).div(100)
+            .shiftedBy(tokenDecimals[currency]).toFixed(0)
+        ).shiftedBy(-tokenDecimals[currency])
         const totalAsked = individualAmount.times(userList.length)
         const [
             address,
@@ -74,22 +115,21 @@ Examples:
 
         await viteQueue.queueAction(address.address, async () => {
             try{
-                await message.react("💊")
+                await message.react(defaultEmoji)
             }catch{}
             const balances = await requestWallet("get_balances", address.address)
-            const token = tokenIds.VITC
             const balance = new BigNumber(balances[token] || 0)
-            const totalAskedRaw = new BigNumber(convert(totalAsked, "VITC", "RAW"))
+            const totalAskedRaw = new BigNumber(convert(totalAsked, currency, "RAW"))
             if(balance.isLessThan(totalAskedRaw)){
                 try{
                     await message.react("❌")
                 }catch{}
                 await message.author.send(
-                    `You don't have enough money to cover this tip. You need ${totalAsked.toFixed()} VITC but you only have ${convert(balance, "RAW", "VITC")} VITC in your balance. Use .deposit to top up your account.`
+                    `You don't have enough money to cover this rain. You need **${totalAsked.toFixed()} ${tokenNameToDisplayName(currency)}** but you only have **${convert(balance, "RAW", tokenTickers[token])} ${tokenNameToDisplayName(token)}** in your balance. Use .deposit to top up your account.`
                 )
                 return
             }
-            const rawIndividualAmount = convert(individualAmount, "VITC", "RAW")
+            const rawIndividualAmount = convert(individualAmount, currency, "RAW")
             const txs:BulkSendResponse = await requestWallet(
                 "bulk_send",
                 address.address, 
@@ -99,19 +139,24 @@ Examples:
                 ]),
                 token
             )
-            await Tip.create({
+            await TipStats.create({
                 amount: parseFloat(
-                    convert(totalAskedRaw, "RAW", "VITC")
+                    convert(totalAskedRaw, "RAW", tokenTickers[token])
                 ),
                 user_id: message.author.id,
-                date: new Date(),
-                txhash: txs[0][0].hash
+                tokenId: token,
+                txhash: Buffer.from(txs[0][0].hash, "hex")
             })
             try{
                 await message.react("909408282307866654")
             }catch{}
+            const pair = tokenPrices[token+"/"+tokenIds.USDT]
             try{
-                await message.reply(`Distributed ${convert(totalAskedRaw, "RAW", "VITC")} VITC amongst ${userList.length} active members!`)
+                await message.reply(`Distributed **${convert(totalAskedRaw, "RAW", tokenTickers[token])} ${tokenNameToDisplayName(token)}** (= **$${
+                    new BigNumber(pair?.closePrice || 0)
+                    .times(totalAsked)
+                    .decimalPlaces(2).toFixed(2)
+                }**) amongst **${userList.length} active members**!`)
             }catch{}
         })
     }

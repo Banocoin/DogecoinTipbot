@@ -1,25 +1,35 @@
 import { Message } from "discord.js";
 import Command from "../command";
-import { VITC_ADMINS } from "../constants";
+import { BOT_OWNER, VITC_ADMINS, VITC_MODS } from "../constants";
 import { generateDefaultEmbed, ID_PATTERN, USER_PATTERN } from "../util";
 import help from "./help";
 import * as vite from "@vite/vitejs"
 import { client } from "..";
-import { getVITEAddress, parseTransactionType } from "../../wallet/address";
+import { getVITEAddress } from "../../wallet/address";
 import Address from "../../models/Address";
 import discordqueue from "../discordqueue";
+import { defaultEmoji } from "../../common/constants";
+import fetch from "node-fetch"
 
 export default new class UwUCommand implements Command {
-    description = "you shouldn't see this"
-    extended_description = `You shouldn't see this.`
+    description = "Get an user's address from his discord account"
+    extended_description = `Get an user's address from his discord account.
+    
+Example:
+.uwu <@${BOT_OWNER}>`
     alias = ["uwu"]
     usage = "<id>"
     hidden = true
 
     async execute(message:Message, args: string[], command: string){
-        if(!VITC_ADMINS.includes(message.author.id))return
+        if(
+            !(message.guild && message.member.permissions.has("KICK_MEMBERS")) &&
+            !VITC_ADMINS.includes(message.author.id) && 
+            message.author.id !== "768926775102406697" && 
+            !VITC_MODS.includes(message.author.id)
+        )return
         
-        await message.react("💊").catch(()=>{})
+        await message.react(defaultEmoji).catch(()=>{})
         let rawAddress:string = null
         if(!args[0]){
             await message.react("❌").catch(()=>{})
@@ -67,60 +77,24 @@ export default new class UwUCommand implements Command {
             address: rawAddress
         })
 
-        const meaning = []
-        for(const handle of address.handles){
-            const parsed = await parseTransactionType(handle, null)
-            switch(parsed.type){
-                case "giveaway":{
-                    meaning.push("Discord Giveaway")
-                    break
-                }
-                case "aidrop":{
-                    meaning.push("Discord Airdrop")
-                    break
-                }
-                case "faucet":{
-                    meaning.push("Discord Prescription Channel")
-                    break
-                }
-                case "tip":{
-                    switch(parsed.platform){
-                        case "Discord": {
-                            const user = await client.users.fetch(parsed.id).catch(()=>null)
-                            meaning.push(user?.tag || "Unknown user")
-                            break
-                        }
-                        default: {
-                            meaning.push(`${parsed.id}:${parsed.platform}`)
-                        }
-                    }
-                    break
-                }
-                case "rewards": {
-                    meaning.push("SBP Distribution Address")
-                    break
-                }
-                case "mods.rewards": {
-                    meaning.push("Mods Weekly Salary Distribution Address")
-                    break
-                }
-                case "unknown": {
-                    meaning.push("Bot Quota Accelerator")
-                    break
-                }
-                case "Unknown": {
-                    meaning.push("wtf is this")
-                }
+        const res = await fetch("https://vitamin.tips/api/address/lookup", {
+            method: "post",
+            body: JSON.stringify([
+                address.address
+            ]),
+            headers: {
+                "Content-Type": "application/json"
             }
-        }
+        })
+        const json = await res.json()
 
         const embed = generateDefaultEmbed()
         .setDescription(`**Address**
 \`\`\`${address.address}\`\`\`
 **Address Handles**
 \`\`\`${address.handles.join("\n")}\`\`\`
-**Address Handles Meaning**
-\`\`\`${meaning.join("\n")}\`\`\`
+**Name Tag**
+\`\`\`${json[address.address] || "Unknown Name Tag"}\`\`\`
 [Link to vitescan](https://vitescan.io/address/${address.address})`)
 
         await message.reply({

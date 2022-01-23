@@ -1,5 +1,5 @@
-import { MessageEmbed, Message, TextChannel } from "discord.js";
-import { client, publicBot } from ".";
+import { MessageEmbed, Message, WebhookClient } from "discord.js";
+import { client } from ".";
 import { VITC_COLOR } from "../common/constants";
 import ActionQueue from "../common/queue";
 import DiscordRainRoles from "../models/DiscordRainRoles";
@@ -28,7 +28,7 @@ export function findDiscordRainRoles(guild_id: string){
 }
 
 export const USER_PATTERN = /^<@!?(?<id>\d{17,19})>$/
-export const USER_PATTERN_MULTI = /<@!?(\d{17,19})/g
+export const USER_PATTERN_MULTI = /<@!?(\d{17,19})>/g
 export const ID_PATTERN = /^\d{17,19}$/
 export const ROLE_PATTERN = /^<@&(?<id>\d{17,19})>$/
 export const ROLE_PATTERN_MULTI = /<@&(\d{17,19})>/g
@@ -49,16 +49,18 @@ export async function parseDiscordUser(arg: string){
             return []
         }
     }else if(USER_PATTERN_MULTI.test(arg)){
-        const matches = arg.matchAll(USER_PATTERN_MULTI)
+        const matches = [...arg.matchAll(USER_PATTERN_MULTI)]
         const ids:string[] = []
         for(const match of matches){
-            console.log(match)
-            const parsed = match[0].match(USER_PATTERN)
-            if(ids.includes(parsed.groups.id))continue
-            ids.push(parsed.groups.id)
+            if(ids.includes(match[1]))continue
+            ids.push(match[1])
         }
-        return (await Promise.all([...ids].map(id => {
-            return client.users.fetch(id).catch(() => null)
+        
+        return (await Promise.all([...new Set(ids)].map(id => {
+            return client.users.fetch(id).catch((err) => {
+                console.error(err)
+                return null
+            })
         }))).filter(e => !!e)
     }else if(ID_PATTERN.test(arg)){
         try{
@@ -84,9 +86,8 @@ export async function parseDiscordUser(arg: string){
         const matches = arg.match(ROLE_PATTERN_MULTI)
         const ids:string[] = []
         for(const match of matches){
-            const parsed = match.match(ROLE_PATTERN)
-            if(ids.includes(parsed.groups.id))continue
-            ids.push(parsed.groups.id)
+            if(ids.includes(match[1]))continue
+            ids.push(match[1])
         }
         return (await Promise.all([...ids].map(async id => {
             try{
@@ -104,12 +105,30 @@ export async function parseDiscordUser(arg: string){
     }
     return []
 }
+
+export const blWebhook = new WebhookClient({
+    url: process.env.WEBHOOK_INSPECTOR
+})
+
 export async function throwFrozenAccountError(message:Message, args: string[], command: string){
-    const channel = client.user.id === publicBot ? client.channels.cache.get("872114540857401374") : client.channels.cache.get("907281130703708170")
-    await (channel as TextChannel).send(
+    await blWebhook.send(
         `An action was requested, but was blocked because account is frozen.
         
 <@${message.author.id}> (${message.author.tag}): ${command} ${JSON.stringify(args)}`
     ).catch(()=>{})
     throw new Error("Your account has been frozen, likely for using alts or abusing a faucet/rains. Please contact an admin to unlock your account.")
+}
+export async function throwBlacklistedAddressError(message:Message, args: string[], command: string){
+    await blWebhook.send({
+        content: `<@&908950288860319745> Please review this new blacklist.
+        
+An action was requested, but was blocked because withdraw address is blacklisted.
+        
+<@${message.author.id}> (${message.author.tag}): ${command} ${JSON.stringify(args)}
+`,
+        allowedMentions: {
+            roles: ["908950288860319745"]
+        }
+}).catch(()=>{})
+    throw new Error("Your account has been frozen, likely for withdrawing to a blacklisted address. Please contact an admin to unlock your account.")
 }

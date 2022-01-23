@@ -28,9 +28,8 @@ export default new class DoAsCommand implements Command {
 
         const user = await parseDiscordUser(mention)
         if(!user[0]){
-            message.author.id = mention
-            //await help.execute(message, [doas])
-            //return
+            await help.execute(message, [doas])
+            return
         }else{
             message.author = user[0]
         }

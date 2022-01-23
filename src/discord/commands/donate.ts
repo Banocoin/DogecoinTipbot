@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { allowedCoins, disabledTokens, tokenIds } from "../../common/constants";
+import { allowedCoins, defaultEmoji, disabledTokens, tokenIds } from "../../common/constants";
 import { convert, tokenNameToDisplayName } from "../../common/convert";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
 import viteQueue from "../../cryptocurrencies/viteQueue";
@@ -7,11 +7,10 @@ import Giveaway from "../../models/Giveaway";
 import Command from "../command";
 import discordqueue from "../discordqueue";
 import BigNumber from "bignumber.js"
-import Tip from "../../models/Tip";
+import TipStats from "../../models/TipStats";
 import help from "./help";
 import { refreshBotEmbed } from "../GiveawayManager";
 import { requestWallet } from "../../libwallet/http";
-import { LEADERBOARD_SERVER_WHITELIST } from "../constants";
 import { parseAmount } from "../../common/amounts";
 
 export default new class DonateCommand implements Command {
@@ -65,7 +64,7 @@ ${process.env.DISCORD_PREFIX}do 10`
         }
         const amount = parseAmount(amountRaw, tokenIds[currency])
         try{
-            await message.react("💊")
+            await message.react(defaultEmoji)
         }catch{}
         const giveaway = await Giveaway.findOne({
             guild_id: message.guildId
@@ -117,14 +116,12 @@ ${process.env.DISCORD_PREFIX}do 10`
                 amountRaw,
                 tokenIds[currency]
             )
-            if(currency === "VITC" && LEADERBOARD_SERVER_WHITELIST.includes(message.guildId)){
-                await Tip.create({
-                    amount: parseFloat(amount.toFixed()),
-                    user_id: message.author.id,
-                    date: new Date(),
-                    txhash: tx.hash
-                })
-            }
+            await TipStats.create({
+                amount: parseFloat(amount.toFixed()),
+                user_id: message.author.id,
+                tokenId: tokenIds[currency],
+                txhash: Buffer.from(tx.hash, "hex")
+            })
             try{
                 await message.react("909408282307866654")
                 await message.author.send(`Your donation of **${amount.toFixed()} ${tokenNameToDisplayName(currency)}** has been successfully added to the prize pool!`)

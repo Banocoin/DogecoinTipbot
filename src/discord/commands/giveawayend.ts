@@ -3,6 +3,7 @@ import Giveaway from "../../models/Giveaway";
 import Command from "../command";
 import { endGiveaway, resolveGiveaway, timeoutsGiveway } from "../GiveawayManager";
 import * as lt from "long-timeout"
+import { defaultEmoji } from "../../common/constants";
 
 export default new class GiveawayEndCommand implements Command {
     description = "End the current giveaway"
@@ -22,7 +23,7 @@ ${process.env.DISCORD_PREFIX}gend`
             return
         }
         try{
-            await message.react("💊")
+            await message.react(defaultEmoji)
         }catch{}
         if(!message.member.permissions.has("MANAGE_MESSAGES")){
             try{

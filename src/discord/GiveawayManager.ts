@@ -1,6 +1,6 @@
 import { client } from "."
 import * as lt from "long-timeout"
-import { durationUnits, randomFromArray } from "../common/util"
+import { durationUnits, randomFromArray, wait } from "../common/util"
 import { getVITEAddressOrCreateOne } from "../wallet/address"
 import viteQueue from "../cryptocurrencies/viteQueue"
 import discordqueue from "./discordqueue"
@@ -93,7 +93,7 @@ Winners: 1${giveaway.fee ?
 `\n**Fee: ${giveaway.fee} ${tokenNameToDisplayName("VITC")}**` : ""} (= **$${
     new BigNumber(vitcPair?.closePrice || 0)
         .times(giveaway.fee)
-        .toFixed(2, BigNumber.ROUND_DOWN)
+        .decimalPlaces(2).toFixed(2)
 }**)
 Entries: **${entries.length} participants**
 Chance of winning: **${Math.floor(1/entries.length*10000)/100}%**
@@ -107,11 +107,11 @@ ${Object.entries(balances).map(tkn => {
     totalFiatValue = totalFiatValue.plus(fiatValue)
 
     return `    **${displayBalance} ${tokenNameToDisplayName(tkn[0])}** (= **$${
-        fiatValue.toFixed(2, BigNumber.ROUND_DOWN)
+        fiatValue.decimalPlaces(2).toFixed(2)
     }**)`
 }).join("\n")}
 
-Total Value: **$${totalFiatValue.toFixed(2, BigNumber.ROUND_DOWN)}**
+Total Value: **$${totalFiatValue.decimalPlaces(2).toFixed(2)}**
 
 \`${prefix}ticket\` to enter the current giveaway
 \`${prefix}ticketstatus\` to view your entry status 
@@ -235,6 +235,7 @@ export async function endGiveaway(giveaway:IGiveaway){
                     balances[token],
                     token
                 )
+                if(tokenIds[0])await wait(5000)
             }
         })
         const channel = client.channels.cache.get(giveaway.channel_id) as TextChannel

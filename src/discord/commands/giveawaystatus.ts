@@ -1,4 +1,5 @@
 import { Message } from "discord.js";
+import { defaultEmoji } from "../../common/constants";
 import Giveaway from "../../models/Giveaway";
 import Command from "../command";
 import { refreshBotEmbed } from "../GiveawayManager";
@@ -21,7 +22,7 @@ ${process.env.DISCORD_PREFIX}gs`
             return
         }
         try{
-            await message.react("💊")
+            await message.react(defaultEmoji)
         }catch{}
         const giveaway = await Giveaway.findOne({
             guild_id: message.guildId

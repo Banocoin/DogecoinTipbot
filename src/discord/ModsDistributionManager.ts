@@ -13,6 +13,7 @@ import { client, publicBot } from "."
 import { BOT_OWNER } from "./constants"
 import { walletConnection } from "../cryptocurrencies/vite"
 import viteQueue from "../cryptocurrencies/viteQueue"
+import { parseAmount } from "../common/amounts"
 
 let nextMonday = new Date("2021-11-29T00:00:00")
 while(nextMonday.getTime() < Date.now()){
@@ -52,6 +53,9 @@ function nextMondayTask(){
         await Promise.all(addresses.map(async address => {
             // 30k vitc
             let amount = baseAmount
+            if(address.amount){
+                amount = new BigNumber(convert(parseAmount(address.amount, tokenIds.VITC), "VITC", "RAW"))
+            }
             const bonuses = await ModsBonus.find({
                 platform: address.platform,
                 id: address.id

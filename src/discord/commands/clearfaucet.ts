@@ -11,7 +11,7 @@ import { IAddress } from "../../models/Address";
 import { durationUnits } from "../../common/util";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
 import viteQueue from "../../cryptocurrencies/viteQueue";
-import { tokenIds } from "../../common/constants";
+import { defaultEmoji, tokenIds } from "../../common/constants";
 import { BOT_OWNER, VITC_ADMINS } from "../constants";
 import { requestWallet } from "../../libwallet/http";
 
@@ -81,7 +81,7 @@ export default new class ClearFaucetCommand implements Command {
         }
 
         try{
-            await message.react("💊")
+            await message.react(defaultEmoji)
         }catch{}
         const recipients:IAddress[] = []
         const address = await getVITEAddressOrCreateOne("VitaBot", "Faucet")
@@ -92,7 +92,7 @@ export default new class ClearFaucetCommand implements Command {
                 continue
             }
             // Looks like we already tried to process that one.
-            if(message.reactions.cache.has("💊")){
+            if(message.reactions.cache.has(defaultEmoji)){
                 if(message.reactions.cache.has("909408282307866654"))continue
             }
             message = await message.fetch()
@@ -129,7 +129,7 @@ export default new class ClearFaucetCommand implements Command {
             }
             try{
                 validMsgs.push(message)
-                if(!message.reactions.cache.has("💊"))await message.react("💊")
+                if(!message.reactions.cache.has(defaultEmoji))await message.react(defaultEmoji)
             }catch{}
             try{
                 const recipient = await discordqueue.queueAction(message.author.id, async () => {
