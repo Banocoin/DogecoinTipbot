@@ -1,4 +1,4 @@
-const powLimit = Infinity
+const powLimit = 10
 
 let count = 0
 

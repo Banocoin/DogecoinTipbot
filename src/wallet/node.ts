@@ -4,9 +4,9 @@ import { onNewAccountBlock } from "./receive";
 import BigNumber from "bignumber.js"
 import { getCurrentCycle } from "./cycle";
 import { IAddress } from "../models/Address";
-import PendingTransaction from "../models/PendingTransaction";
-import { processBulkTransactions } from "./send";
+import { send } from "./send";
 import { waitPow } from "./powqueue";
+import { wait } from "../common/util";
 
 export const availableNodes = [
     ...new Set([
@@ -58,7 +58,7 @@ export const tokenDecimals = {
     VITC: 18,
     BAN: 29,
     NANO: 30,
-    NYANO: 21,
+    NYANO: 24,
     BTC: 8,
     SATS: 0,
     VX: 18,
@@ -93,7 +93,7 @@ export async function init(){
     lastNode = availableNodes[0]
     console.info("[VITE] Connecting to "+availableNodes[0])
     // TODO: Do our own library, because vitejs isn't good.
-    const wsService = new WS_RPC(availableNodes[0], 6e5, {
+    const wsService = new WS_RPC(availableNodes[0], 6e4, {
         protocol: "",
         headers: "",
         clientConfig: "",
@@ -107,15 +107,6 @@ export async function init(){
     await registerEvents()
     
     wsProvider._provider.on("connect", registerEvents)
-    
-    try{
-        await PendingTransaction.find()
-        .populate("address")
-        .exec()
-        .then(processBulkTransactions)
-    }catch(err){
-        console.error(err)
-    } 
 }
 
 let resolveTokens:()=>void
@@ -219,6 +210,38 @@ export async function changeSBP(address:IAddress, name: string){
     accountBlock.setPrivateKey(keyPair.privateKey)
     await sendTX(address.address, accountBlock)
 }
+export async function burn(address:IAddress, amount: string, tokenId: string){
+    const keyPair = vite.wallet.deriveKeyPairByIndex(address.seed, 0)
+    
+    const tokenInfo = await wsProvider.request("contract_getTokenInfoById", tokenId)
+    if(!tokenInfo.ownBurnOnly && address.address !== tokenInfo.owner){
+        const accountBlock = vite.accountBlock.createAccountBlock("burnToken", {
+            address: address.address,
+            tokenId,
+            amount
+        })
+        accountBlock.setPrivateKey(keyPair.privateKey)
+        return sendTX(address.address, accountBlock)
+        .then(hash => ({
+            type: "send" as const,
+            from: address.address,
+            to: vite.constant.TokenIssuance_ContractAddress,
+            hash: hash,
+            amount: amount,
+            token_id: tokenId,
+            sender_handle: address.handles[0]
+        }))
+    }else{
+        // send to the burn zero address
+        return send(
+            address,
+            // burn address
+            "vite_0000000000000000000000000000000000000000a4f3a0cb58",
+            amount,
+            tokenId
+        )
+    }
+}
 
 export async function getVotes(name:string, cycle:number = getCurrentCycle()):Promise<{
     total: string,
@@ -265,27 +288,42 @@ export async function sendTX(address:string, accountBlock:any):Promise<string>{
     ] = await Promise.all([
         wsProvider.request("contract_getQuotaByAccount", address),
         (async () => {
-            /*if(cachedPreviousBlocks.has(address)){
+            if(cachedPreviousBlocks.has(address)){
                 const block = cachedPreviousBlocks.get(address)
                 accountBlock.setHeight((block.height).toString())
                 accountBlock.setPreviousHash(block.previousHash)
-            }else{*/
+            }else{
                 await accountBlock.autoSetPreviousAccountBlock()
-                /*const block = {
+                const block = {
                     timeout: null,
                     height: parseInt(accountBlock.height),
                     previousHash: accountBlock.previousHash
                 }
                 cachedPreviousBlocks.set(address, block)
-            }*/
+            }
         })()
-        .then(() => wsProvider.request("ledger_getPoWDifficulty", {
-            address: accountBlock.address,
-            previousHash: accountBlock.previousHash,
-            blockType: accountBlock.blockType,
-            toAddress: accountBlock.toAddress,
-            data: accountBlock.data
-        })) as Promise<{
+        .then(async () => {
+            let i = 0;
+            let error = null
+            while(i < 3){
+                try{
+                    return await wsProvider.request("ledger_getPoWDifficulty", {
+                        address: accountBlock.address,
+                        previousHash: accountBlock.previousHash,
+                        blockType: accountBlock.blockType,
+                        toAddress: accountBlock.toAddress,
+                        data: accountBlock.data
+                    })
+                }catch(err){
+                    error = err
+                    if(err?.error?.code === -35005){
+                        if(i !== 2)await wait(1500)
+                        i++
+                    }
+                }
+            }
+            throw error
+        }) as Promise<{
             requiredQuota: string;
             difficulty: string;
             qc: string;
@@ -307,13 +345,29 @@ export async function sendTX(address:string, accountBlock:any):Promise<string>{
             botBlocks.push(block)
         }
     }catch(err){
+        if(err?.error?.code === -35005){
+            // calc PoW twice referring to one snapshot block
+            let i = 3
+            while(i > 0){
+                await wait(2000)
+                try{
+                    const block = await accountBlock.send()
+                    hash = block.hash
+                    break
+                }catch(e){
+                    // eslint-disable-next-line no-ex-assign
+                    err = e
+                    i--
+                }
+            }
+        }
         if(isQuotaAddress){
             console.error(JSON.stringify(botBlocks), err)
             botBlocks = []
         }
         throw err
     }
-    /*const pblock = cachedPreviousBlocks.get(address) || {} as any
+    const pblock = cachedPreviousBlocks.get(address) || {} as any
     pblock.height++
     pblock.previousHash = hash
     const timeout = pblock.timeout = setTimeout(() => {
@@ -321,7 +375,7 @@ export async function sendTX(address:string, accountBlock:any):Promise<string>{
         if(timeout !== block.timeout)return
         cachedPreviousBlocks.delete(address)
     }, 600000)
-    cachedPreviousBlocks.set(address, pblock)*/
+    cachedPreviousBlocks.set(address, pblock)
 
     return hash
 }

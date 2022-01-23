@@ -1,15 +1,14 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { Networks } from "../common/constants";
-import { IAddress } from "./Address";
 
 export interface IPendingTransactions extends Document {
     network: Networks
-    address: IAddress,
     toAddress: string,
     handle: string,
     amount: string,
     tokenId: string,
-    hash: string
+    hash: string,
+    id: string
 }
 
 const AddressSchema = new Schema<IPendingTransactions>({
@@ -39,6 +38,10 @@ const AddressSchema = new Schema<IPendingTransactions>({
         required: true
     },
     tokenId: {
+        type: String,
+        required: true
+    },
+    id: {
         type: String,
         required: true
     }

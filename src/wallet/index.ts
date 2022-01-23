@@ -2,6 +2,7 @@ import "../common/load-env";
 import { dbPromise } from "../common/load-db";
 import { init } from "./node";
 import initStuckTransactionService from "./stuckTransactions";
+import "../common/crypto-info"
 
 (async () => {
     console.log("Starting Wallet !")
@@ -12,7 +13,7 @@ import initStuckTransactionService from "./stuckTransactions";
         init()
     ])
 
-    initStuckTransactionService()
-
     import("./server")
+
+    initStuckTransactionService()
 })()

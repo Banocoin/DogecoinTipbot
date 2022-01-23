@@ -34,7 +34,7 @@ export function parseTransactionType(sendingHandle:string, transaction_handle:st
         }
         case "Discord":
         case "Twitter":
-        case "Reddit": 
+        case "Telegram": 
             // normal tips
             return {
                 type: "tip",
@@ -59,10 +59,45 @@ export function parseTransactionType(sendingHandle:string, transaction_handle:st
                         text: `You received **{amount}** for voting for our SBP!`
                     }
                 }
+                case "SBPClaim": {
+                    return {
+                        type: "claim.rewards",
+                        text: `You received **{amount}** from VitaminCoinSBP!`
+                    }
+                }
                 case "Mods": {
                     return {
                         type: "mods.rewards",
                         text: `You received **{amount}** for being a moderator on Vitamin Coin!`
+                    }
+                }
+                case "DAO": {
+                    return {
+                        type: "dao.rewards",
+                        text: `You received **{amount}** from the Vitamin Coin DAO! Thanks for holding VITC!`
+                    }
+                }
+            }
+            break
+        }
+        case "Rewards.Vitoge": {
+            switch(sid){
+                case "SBP": {
+                    return {
+                        type: "rewards.vitoge",
+                        text: `You received **{amount}** for voting for Vitoge SBP!`
+                    }
+                }
+                case "DAO": {
+                    return {
+                        type: "dao.rewards.vitoge",
+                        text: `You received **{amount}** from Vitoge DAO! Thanks for holding Vitoge!`
+                    }
+                }
+                case "SBPClaim": {
+                    return {
+                        type: "claim.rewards.vitoge",
+                        text: `You received **{amount}** from Vitoge SBP!`
                     }
                 }
             }

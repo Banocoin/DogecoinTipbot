@@ -79,7 +79,7 @@ const app = express()
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             const result = await action(...(req.body.params || []))
-            res.status(200).send(result)
+            res.status(200).header("Content-Type", "application/json").send(JSON.stringify(result))
         }catch(err){
             console.error(err)
             res.status(500).send({
@@ -153,16 +153,8 @@ wss.on("connection", (ws, req) => {
     }
     events.on("receive_transaction", txlistener)
     events.on("send_transaction", txlistener)
-    const sbpMessageListener = msg => {
-        ws.send(JSON.stringify({
-            op: "sbp_rewards",
-            d: msg
-        }))
-    }
-    events.on("sbp_message", sbpMessageListener)
     ws.on("close", () => {
         events.off("receive_transaction", txlistener)
         events.off("send_transaction", txlistener)
-        events.off("sbp_message", sbpMessageListener)
     })
 })

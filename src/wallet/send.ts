@@ -6,7 +6,8 @@ import { IAddress } from "../models/Address"
 import { sendTX } from "./node"
 import { getVITEAddressOrCreateOne } from "./address"
 import PendingTransaction, { IPendingTransactions } from "../models/PendingTransaction"
-import { retryAsync } from "../common/util"
+import { retryAsync, wait } from "../common/util"
+import * as crypto from "crypto"
 
 export const hashToSender:{[key:string]: string} = {}
 
@@ -37,7 +38,7 @@ export async function send(address: IAddress, toAddress: string, amount: string,
 }
         
 let botAddress:IAddress
-export async function bulkSend(from: IAddress, payouts:[string, string][], tokenId: string){
+export async function bulkSend(from: IAddress, payouts:[string, string][], tokenId: string, timeout = 0){
     if(!botAddress)botAddress = await viteQueue.queueAction("Batch.Quota", () => getVITEAddressOrCreateOne("Batch", "Quota"))
     if(from.paused)throw new Error("Address frozen, please contact an admin.")
     let totalAmount = new BigNumber(0)
@@ -59,47 +60,58 @@ export async function bulkSend(from: IAddress, payouts:[string, string][], token
             baseTransaction,
             receiveTransaction
         ]),
-        processBulkTransactions(transactions)
+        processBulkTransactions(transactions, timeout)
     ])
 }
 
 export async function rawBulkSend(from: IAddress, payouts:[string, string][], tokenId: string, handle: string, hash: string){
-    const promises:Promise<IPendingTransactions>[] = []
-    for(const [to, amount] of payouts){
-        promises.push(PendingTransaction.create({
+    const transactions = await PendingTransaction.insertMany(payouts.map(([to, amount]) => {
+        return {
             network: "VITE",
             address: from,
             toAddress: to,
             amount,
             tokenId,
             handle,
-            hash
-        }))
-    }
-    return Promise.all(promises)
+            hash,
+            id: crypto.randomBytes(32).toString("utf8")
+        }
+    }))
+    return transactions
 }
 
-export async function processBulkTransactions(transactions:IPendingTransactions[]):Promise<SendTransaction[]>{
+export async function processBulkTransactions(transactions:IPendingTransactions[], timeout = 0):Promise<SendTransaction[]>{
     const txs:SendTransaction[] = []
     const errors = []
-    while(transactions[0]){
-        try{
-            const transaction = transactions.shift()
-            const baseTx = await viteQueue.queueAction(transaction.address.address, async () => {
-                return retryAsync(() => {
-                    return send(transaction.address, transaction.toAddress, transaction.amount, transaction.tokenId, Buffer.from(transaction.hash || "", "hex").toString("base64"))
+    if(!botAddress)botAddress = await viteQueue.queueAction("Batch.Quota", () => getVITEAddressOrCreateOne("Batch", "Quota"))
+    let resolve
+    const promise = new Promise(r => {
+        resolve = r
+    })
+    viteQueue.queueAction(botAddress.address, async () => {
+        while(transactions[0]){
+            try{
+                const transaction = transactions.shift()
+                const baseTx = await retryAsync(() => {
+                    return send(botAddress, transaction.toAddress, transaction.amount, transaction.tokenId, Buffer.from(transaction.hash || "", "hex").toString("base64"))
                 }, 3)
-            })
-            hashToSender[baseTx.hash] = transaction.handle
-            setTimeout(() => {
-                delete hashToSender[baseTx.hash]
-            }, 600000)
-            await transaction.delete()
-            txs.push(baseTx)
-        }catch(err){
-            errors.push(err)
+                hashToSender[baseTx.hash] = transaction.handle
+                setTimeout(() => {
+                    delete hashToSender[baseTx.hash]
+                }, 600000)
+                await transaction.delete()
+                txs.push(baseTx)
+            }catch(err){
+                errors.push(err)
+            }
         }
-    }
+        resolve()
+        if(timeout > 0){
+            // wait for quota to regenerate in some case
+            await wait(timeout)
+        }
+    })
+    await promise
     if(errors.length > 0){
         throw errors
     }
