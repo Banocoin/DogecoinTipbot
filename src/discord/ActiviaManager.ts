@@ -15,7 +15,7 @@ client.on("messageCreate", async message => {
         !message.guildId ||
         message.author.bot
     )return
-    if(/^[?.!]\w+/.test(content))return
+    if(/^([?.!]|a!)\w+/.test(content))return
 
     let hasRole = false
     const member = await message.member.fetch().catch(() => null)
