@@ -221,7 +221,23 @@ Thanks to all our voters!`
 
 const prefix = process.env.DISCORD_PREFIX
 client.on("messageCreate", async message => {
-    if([FAUCET_CHANNEL_ID, FAUCET_CHANNEL_ID_VITAMINHEAD].includes(message.channel.id)){
+    if(message.author.id === client.user.id)return
+    if(!message.guild && !nocheckcache.has(message.author.id)){
+        nocheckcache.add(message.author.id)
+        createDMQueue.queueAction(message.author.id, async () => {
+            const channel = await DiscordDMChannel.findOne({
+                bot_id: client.user.id,
+                user_id: message.author.id
+            })
+            if(!channel){
+                await DiscordDMChannel.create({
+                    bot_id: client.user.id,
+                    user_id: message.author.id,
+                    channel_id: message.channel.id
+                })
+            }
+        })
+    }
         if(!VITC_ADMINS.includes(message.author.id))return
     }
     if(botRegexp.test(message.content)){
