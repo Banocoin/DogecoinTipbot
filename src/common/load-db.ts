@@ -1,5 +1,6 @@
 import mongoose from "mongoose"
 
+export let isDBReady = false
 export const dbPromise = mongoose.connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -8,4 +9,6 @@ export const dbPromise = mongoose.connect(process.env.MONGO_URL, {
         user: process.env.MONGO_USER
     },
     authSource: "admin"
+}).then(() => {
+    isDBReady = true
 })

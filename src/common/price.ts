@@ -31,6 +31,18 @@ export async function fetchPrices(){
 
         tokenPrices[usdtPairId] = resolveUSDPair(pair)
     }
+
+    // Also resolve vite pairs
+    for(const pair of json.data.sort((a, b) => {
+        return ordering.indexOf(a.quoteToken)-ordering.indexOf(b.quoteToken)
+    })){
+        const pairId = `${pair.tradeToken}/${pair.quoteToken}`
+        const vitePairId = `${pair.tradeToken}/${tokenIds.VITE}`
+        tokenPrices[pairId] = pair
+        if(tokenPrices[vitePairId])continue
+
+        tokenPrices[vitePairId] = resolveVITEPair(pair)
+    }
 }
 
 fetchPrices()
@@ -46,6 +58,20 @@ export function resolveUSDPair(pair:any){
         openPrice: new BigNumber(quotePair.openPrice).times(pair.openPrice).toFixed(),
         prevClosePrice: new BigNumber(quotePair.prevClosePrice).times(pair.prevClosePrice).toFixed(),
         closePrice: new BigNumber(quotePair.closePrice).times(pair.closePrice).toFixed(),
+        pricePrecision: quotePair.pricePrecision+pair.pricePrecision,
+        quantityPrecision: quotePair.quantityPrecision+pair.quantityPrecision
+    }
+}
+export function resolveVITEPair(pair:any){
+    const quotePair = tokenPrices[`${tokenIds.VITE}/${pair.quoteToken}`]
+    return {
+        ...pair,
+        symbol: `${pair.tradeTokenSymbol}_VITE-000`,
+        quoteTokenSymbol: "VITE-000",
+        quoteToken: tokenIds.VITE,
+        openPrice: new BigNumber(1).div(quotePair.openPrice).times(pair.openPrice).toFixed(),
+        prevClosePrice: new BigNumber(1).div(quotePair.prevClosePrice).times(pair.prevClosePrice).toFixed(),
+        closePrice: new BigNumber(1).div(quotePair.closePrice).times(pair.closePrice).toFixed(),
         pricePrecision: quotePair.pricePrecision+pair.pricePrecision,
         quantityPrecision: quotePair.quantityPrecision+pair.quantityPrecision
     }

@@ -1,4 +1,5 @@
 import fetch from "node-fetch"
+import { Gateway } from "../common/vitex-gateway"
 import { ReceiveTransaction, SBPMessageStats, SendTransaction } from "../wallet/events"
 
 export type GetTokenResponse = {
@@ -59,27 +60,37 @@ export interface WalletResponses {
     get_balances: GetBalancesResponses,
     get_tokens: GetTokenResponse,
     send: SendResponse,
+    burn: SendResponse,
     send_wait_receive: SendWaitResponse,
     get_account_block: GetAccountBlockResponse,
     get_account_blocks: GetAccountBlocksResponse,
     get_sbp_votes: GetSBPVotesResponse,
     send_sbp_messages: SendSBPMessagesResponse,
     get_sbp_rewards_pending_withdrawal: GetSBPRewardsPendingWithdrawalResponse,
-    withdraw_sbp_rewards: SendResponse
+    withdraw_sbp_rewards: SendResponse,
+    get_gateways: {
+        [tokenId: string]: Gateway
+    },
+    restart: null,
+    process_account: null
 }
 
 export interface WalletRequestParams {
-    bulk_send: [string, [string, string][], string],
+    bulk_send: [string, [string, string][], string]|[string, [string, string][], string, number],
     get_balances: [string],
     get_tokens: [],
     send: [string, string, string, string],
+    burn: [string, string, string],
     get_account_block: [string],
     get_account_blocks: [string, string, string, number],
     get_sbp_votes: [string]|[string, number],
     send_sbp_messages: [SBPMessageStats],
     get_sbp_rewards_pending_withdrawal: [string],
     withdraw_sbp_rewards: [string, string, string],
-    send_wait_receive: [string, string, string, string]
+    send_wait_receive: [string, string, string, string],
+    get_gateways: [],
+    restart: [],
+    process_account: [string]
 }
 
 export async function requestWallet<Action extends keyof WalletResponses>(action:Action, ...params: WalletRequestParams[Action]):Promise<WalletResponses[Action]>{
@@ -94,7 +105,7 @@ export async function requestWallet<Action extends keyof WalletResponses>(action
         })
     })
     const body = await res.json()
-    if("error" in body){
+    if(body && "error" in body){
         const err = Error()
         err.message = body.error.message
         err.name = body.error.name

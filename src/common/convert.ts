@@ -18,16 +18,19 @@ export function convert(amount: string|BigNumber|number, base_unit: string, unit
     return toFixed
 }
 
-const platform = require.main.filename.includes("discord") ? "discord" : require.main.filename.includes("twitter") ? "twitter" : "other"
+const platform = require.main.filename.includes("discord") ? "discord" : 
+    require.main.filename.includes("twitter") ? "twitter" : 
+    require.main.filename.includes("telegram") ? "telegram" : 
+    "other"
 
-export function tokenNameToDisplayName(token: string){
+export function tokenNameToDisplayName(token: string, pltfrm = platform){
     token = tokenIdToName(token) || token
 
     const name = tokenNames[token] || token
 
-    if(platform === "discord" && discordEmojis[token]){
+    if(pltfrm === "discord" && discordEmojis[token]){
         return `${name} ${discordEmojis[token]}`
-    }else if(platform === "twitter" && twitterEmojis[token]){
+    }else if((pltfrm === "twitter" || pltfrm === "telegram") && twitterEmojis[token]){
         return `${name} ${twitterEmojis[token]}`
     }
 

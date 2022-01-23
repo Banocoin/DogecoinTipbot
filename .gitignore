@@ -8,3 +8,10 @@ dist
 users.json
 # Database backups
 backups
+# yes
+crypto-info
+# Last airdrop infos
+airdrop.json
+# Telegram certificats
+key.pem
+crt.pem
