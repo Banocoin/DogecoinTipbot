@@ -32,7 +32,7 @@ export function parseAmount(amount:string, currency:string){
         // so, for example, 3k vitc
         const unit = amount.slice(-1)
         amount = amount.slice(0, -1)
-        multiplier = multipliers[unit]
+        multiplier = multipliers[unit.toLowerCase()]
     }
     
     if(!/^\d+(\.\d+)?$/.test(amount))throw new InvalidAmountError("Couldn't parse amount")
