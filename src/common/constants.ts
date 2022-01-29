@@ -27,7 +27,9 @@ export const tokenIds = {
     MESH: "tti_8b971a1b4735fcd83c999272",
     VITOGE: "tti_22a70f6a6c078f7f976c163e",
     VICAT: "tti_b3fbb46b9318b3d168ba904e",
-    VIVA: "tti_a23c2f75791efafe5fada99e"
+    VIVA: "tti_a23c2f75791efafe5fada99e",
+    UST: "tti_3d482aaceb076a729cb3967b",
+    LUNA: "tti_60ce61fb1bf38a32be3bfb91"
 }
 export const tokenTickers = {
     [tokenIds.VITE]: "VITE",
@@ -44,7 +46,9 @@ export const tokenTickers = {
     [tokenIds.MESH]: "MESH",
     [tokenIds.VITOGE]: "VITOGE",
     [tokenIds.VICAT]: "VICAT",
-    [tokenIds.VIVA]: "VIVA"
+    [tokenIds.VIVA]: "VIVA",
+    [tokenIds.UST]: "UST",
+    [tokenIds.LUNA]: "LUNA"
 }
 export const tokenDecimals = {
     VITE: 18,
@@ -61,7 +65,9 @@ export const tokenDecimals = {
     MESH: 18,
     VITOGE: 18,
     VICAT: 7,
-    VIVA: 18
+    VIVA: 18,
+    UST: 6,
+    LUNA: 6
 }
 export const tokenNames = {
     VITE: "Vite",
@@ -76,7 +82,9 @@ export const tokenNames = {
     MESH: "Mesh",
     VITOGE: "Vitoge",
     VICAT: "ViCat",
-    VIVA: "Viva"
+    VIVA: "Viva",
+    UST: "UST",
+    LUNA: "Luna"
 }
 
 export const discordEmojis = {
@@ -144,7 +152,9 @@ export const twitterEmojis = {
     BAN: "🍌",
     VINU: "🐕",
     VICAT: "🐱",
-    MESH: "🕸️"
+    MESH: "🕸️",
+    UST: "🇺🇸",
+    LUNA: "🌕"
 }
 
 export const AIRDROP_MIN = "$0.10"

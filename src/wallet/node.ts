@@ -37,19 +37,23 @@ export const tokenIds = {
     XMR: "tti_e5750d3c5b3bb5a31b8ba637",
     // everything vite does, but with fees
     ETH: "tti_687d8a93915393b219212c73",
-    VINU: "tti_541b25bd5e5db35166864096"
+    VINU: "tti_541b25bd5e5db35166864096",
+    UST: "tti_3d482aaceb076a729cb3967b",
+    LUNA: "tti_60ce61fb1bf38a32be3bfb91"
 }
 export const tokenTickers = {
-    tti_5649544520544f4b454e6e40: "VITE",
-    tti_22d0b205bed4d268a05dfc3c: "VITC",
-    tti_f9bd6782f966f899d74d7df8: "BAN",
-    tti_29a2af20212b985e9d49e899: "NANO",
-    tti_b90c9baffffc9dae58d1f33f: "BTC",
-    tti_564954455820434f494e69b5: "VX",
-    tti_251a3e67a41b5ea2373936c8: "VCP",
-    tti_e5750d3c5b3bb5a31b8ba637: "XMR",
-    tti_687d8a93915393b219212c73: "ETH",
-    tti_541b25bd5e5db35166864096: "VINU"
+    [tokenIds.VITE]: "VITE",
+    [tokenIds.VITC]: "VITC",
+    [tokenIds.BAN]: "BAN",
+    [tokenIds.NANO]: "NANO",
+    [tokenIds.BTC]: "BTC",
+    [tokenIds.VX]: "VX",
+    [tokenIds.VCP]: "VCP",
+    [tokenIds.XMR]: "XMR",
+    [tokenIds.ETH]: "ETH",
+    [tokenIds.VINU]: "VINU",
+    [tokenIds.UST]: "UST",
+    [tokenIds.LUNA]: "LUNA"
 }
 
 export const tokenDecimals = {
@@ -65,7 +69,9 @@ export const tokenDecimals = {
     VCP: 0,
     XMR: 12,
     ETH: 18,
-    VINU: 18
+    VINU: 18,
+    UST: 6,
+    LUNA: 6
 }
 
 export const tokenNames = {
@@ -79,7 +85,14 @@ export const tokenNames = {
     BUS: "Bussycoin",
     XRB: "RayBlocks",
     BANG: "Banano Gold",
-    BROCC: "Broccoli 🥦"
+    BROCC: "Broccoli 🥦",
+    "VINU-000": "Vita Inu [old]",
+    MESH: "Mesh",
+    VITOGE: "Vitoge",
+    VICAT: "ViCat",
+    VIVA: "Viva",
+    UST: "UST",
+    LUNA: "Luna"
 }
 
 export let wsProvider

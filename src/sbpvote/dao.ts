@@ -30,7 +30,10 @@ const twitc = new Twit({
 const minimums = {
     [tokenIds.VITE]: convert("400", "VITE", "RAW"),
     [tokenIds.VIVA]: convert("100000", "VIVA", "RAW"),
-    [tokenIds.VITC]: convert("6000", "VITC", "RAW")
+    [tokenIds.VITC]: convert("6000", "VITC", "RAW"),
+    [tokenIds.UST]: convert("5", "UST", "RAW"),
+    // 5$ in Luna
+    [tokenIds.LUNA]: convert("0.1", "LUNA", "RAW")
 }
 
 Promise.all([
