@@ -10,7 +10,7 @@ const startDates = [
     new Date("2021-11-26T05:00:00.000Z"),
     new Date("2021-11-26T05:00:00.000Z"),
     new Date("2021-11-26T05:00:00.000Z"),
-    new Date("2021-11-26T05:00:00.000Z"),
+    new Date("2022-02-10T05:00:00.000Z"),
     new Date("2021-12-17T05:00:00.000Z")
 ]
 
@@ -24,7 +24,7 @@ const sbpList = [
     "N4Y",
     "N4Q.org",
     "Elegance.Vite",
-    "Beauty.Vite",
+    "ViCat_SBP",
     "Vitoge_SBP"
 ]
 const sbpsIcon = [
@@ -36,7 +36,7 @@ const sbpsIcon = [
     null,
     null,
     null,
-    null,
+    "https://cdn.discordapp.com/attachments/937601374504509450/940568012652703754/coin_green.png",
     null
 ]
 
@@ -155,9 +155,9 @@ async function broadcastMessage(tx:ReceiveTransaction){
 
 Received: **${convert(tx.amount, "RAW", tokenTickers[tx.token_id])}** ${tokenNames[tokenTickers[tx.token_id]]}
 Total Vite Equivalent: **${convert(totalViteValue.toFixed(6), "VITE", "VITE")}** VITE (**${percent.toFixed(2)}%**)
-SBP: **[${sbpsAddresses[tx.to]}](https://vitescan.io/sbp/${sbpsAddresses[tx.to]})**
-From: [${tx.from}](https://vitescan.io/address/${tx.from})
-Hash: [${tx.hash}](https://vitescan.io/tx/${tx.hash})
+SBP: **[${sbpsAddresses[tx.to]}](https://vitcscan.com/sbp/${sbpsAddresses[tx.to]})**
+From: [${tx.from}](https://vitcscan.com/address/${tx.from})
+Hash: [${tx.hash}](https://vitcscan.com/tx/${tx.hash})
 Time: <t:${Math.floor(Date.now()/1000)}>
 Daily: **${percent.div(elapsedDays).toFixed(2)}%**
 Yearly: **${percent.times(365).div(elapsedDays).toFixed(2)}%**
