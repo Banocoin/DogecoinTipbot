@@ -48,7 +48,13 @@ export async function initFaucet(){
             NEW_FAUCET_CHANNEL_ID
         ].includes(message.channelId))return
         if(message.author.bot){
-            if(message.author.id !== client.user.id)await message.delete()
+            if(
+                message.author.id !== client.user.id
+                && ![
+                    // Atlas Premium
+                    "895489721625640991"
+                ].includes(message.author.id)
+            )await message.delete()
             return
         }
         const isAdmin = VITC_ADMINS.includes(message.author.id)

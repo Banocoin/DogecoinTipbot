@@ -32,6 +32,9 @@ export default new class BalanceCommand implements Command {
         if(tokenIds["VINU-000"]){
             delete balances[tokenIds["VINU-000"]]
         }
+        if(tokenIds["NYA-000"]){
+            delete balances[tokenIds["NYA-000"]]
+        }
         const lines = []
         let totalPrice = new BigNumber(0)
         for(const tokenId in balances){
@@ -60,8 +63,8 @@ export default new class BalanceCommand implements Command {
 
         const embed = generateDefaultEmbed()
         .setAuthor({
-            name: "View on vitescan.io",
-            url: `https://vitescan.io/address/${address.address}`
+            name: "View on VITCScan",
+            url: `https://vitcscan.com/address/${address.address}`
         })
         .setDescription(lines.join("\n"))
         await message.author.send({

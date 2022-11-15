@@ -15,7 +15,7 @@ import { walletConnection } from "../cryptocurrencies/vite"
 import viteQueue from "../cryptocurrencies/viteQueue"
 import { parseAmount } from "../common/amounts"
 
-let nextMonday = new Date("2021-11-29T00:00:00")
+let nextMonday = new Date("2022-08-29T00:00:00")
 while(nextMonday.getTime() < Date.now()){
     nextMonday = new Date(nextMonday.getTime()+durationUnits.w)
 }

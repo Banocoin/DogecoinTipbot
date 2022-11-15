@@ -3,7 +3,7 @@ import TipStats from "../../models/TipStats";
 
 export default Router()
 .get("/recent", async (_, res) => {
-    const tips = await TipStats.find().limit(50)
+    const tips = await TipStats.find().sort({_id: -1}).limit(50)
     res.status(200).send(tips.map(e => {
         return {
             tokenId: e.tokenId,

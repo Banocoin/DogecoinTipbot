@@ -11,7 +11,7 @@ import { generateDefaultEmbed } from "../util";
 export default new class TicketStatusCommand implements Command {
     description = "See the status of your giveaway entry"
     extended_description = `See the status of your entry.
-Will display the amount you paid in fees, the time, and the transaction on vitescan.
+Will display the amount you paid in fees, the time, and the transaction on VITCScan.
 
 **See the status of your giveaway entry.**
 ${process.env.DISCORD_PREFIX}ts`
@@ -59,7 +59,7 @@ ${process.env.DISCORD_PREFIX}ts`
                 .decimalPlaces(2).toFixed(2)
         }**)
 Entered **<t:${Math.floor(entry.date.getTime()/1000)}:R>**
-[View Vitescan](https://vitescan.io/tx/${entry.txhash})`)
+[View Vitescan](https://vitcscan.com/tx/${entry.txhash})`)
         await message.author.send({
             embeds: [embed]
         })

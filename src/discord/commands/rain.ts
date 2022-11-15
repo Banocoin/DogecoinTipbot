@@ -84,7 +84,7 @@ Examples:
             await message.reply(`The minimum amount to rain is **${rainMinStr} ${tokenNameToDisplayName(token)}**.`)
             return
         }
-        const userList = (await getActiveUsers(message.guildId))
+        const userList = (await getActiveUsers(message.guildId, token === tokenIds.VITC))
             .filter(e => e !== message.author.id)
         if(userList.length < 5){
             await message.reply(`There are less than **5 active users** (${userList.length} active users). Cannot rain.`)

@@ -15,3 +15,7 @@ airdrop.json
 # Telegram certificats
 key.pem
 crt.pem
+# VPoW Data
+vpow_data
+# idena airdrop data
+idena.json

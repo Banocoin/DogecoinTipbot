@@ -26,14 +26,29 @@ export function parseTransactionType(sendingHandle:string, transaction_handle:st
                 text: `You received **{amount}** from an Airdrop!`
             }
         }
+        case "Discord.Link": {
+            return {
+                type: "link",
+                text: "You received **{amount}** from a linking wallet."
+            }
+        }
         case "Faucet": {
             return {
                 type: "faucet",
                 text: `You received **{amount}** from **Faucet**!`
             }
         }
+        case "Bank": {
+            return {
+                type: "bank",
+                text: `You received **{amount}** from **{name}**!`,
+                project_id: sid.split("_")[0],
+                index: Number(sid.split("_")[1] || "0")
+            }
+        }
         case "Discord":
         case "Twitter":
+        case "Reddit":
         case "Telegram": 
             // normal tips
             return {
@@ -57,6 +72,12 @@ export function parseTransactionType(sendingHandle:string, transaction_handle:st
                     return {
                         type: "rewards",
                         text: `You received **{amount}** for voting for our SBP!`
+                    }
+                }
+                case "VPoW": {
+                    return {
+                        type: "vpow.rewards",
+                        text: `You received **{amount}** for providing PoW for VPoW! Thanks for your support!`
                     }
                 }
                 case "SBPClaim": {

@@ -102,7 +102,7 @@ Withdraw 1 ${tokenNameToDisplayName("BAN")} to your wallet
                     recipient_id: message.user.id,
                     text: `Your withdraw was processed!
     
-View transaction on vitescan: https://vitescan.io/tx/${tx.hash}`
+View transaction on VITCScan: https://vitcscan.com/tx/${tx.hash}`
                 })
             })
         }else{

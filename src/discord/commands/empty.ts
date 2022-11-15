@@ -104,7 +104,7 @@ export default new class EmptyCommand implements Command {
             await message.channel.send({
                 content: `Emptying Done!
 
-View transaction on vitescan: https://vitescan.io/tx/${tx.hash}`,
+View transaction on VITCScan: https://vitcscan.com/tx/${tx.hash}`,
                 reply: {
                     messageReference: message,
                     failIfNotExists: false

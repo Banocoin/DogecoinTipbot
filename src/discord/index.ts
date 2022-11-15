@@ -13,11 +13,17 @@ import { searchGiveaways } from "./GiveawayManager"
 import { walletConnection } from "../cryptocurrencies/vite"
 import Address from "../models/Address"
 import { convert, tokenNameToDisplayName } from "../common/convert"
-import { allowedServersBots, VITC_ADMINS, whitelistedBots } from "./constants"
+import { allowedServersBots, BOT_OWNER, VITC_ADMINS, whitelistedBots } from "./constants"
 import { parseTransactionType } from "../wallet/address"
 import "./ModsDistributionManager"
 import { createDMQueue, nocheckcache } from "./antispambypass"
 import DiscordDMChannel from "../models/DiscordDMChannel"
+import viteQueue from "../cryptocurrencies/viteQueue"
+import DiscordLinkedWallet from "../models/DiscordLinkedWallet"
+import { requestWallet } from "../libwallet/http"
+import WalletLinkingSecret from "../models/WalletLinkingSecret"
+import { randomBytes } from "crypto"
+import APIProject from "../models/APIProject"
 
 export const discordBotId = process.argv[2]
 export const deprecatedBots = process.env.DISCORD_DEPRECATED_BOT.split(",")
@@ -92,36 +98,48 @@ client.on("ready", async () => {
             )
             let text = `
 
-View transaction on vitescan: https://vitescan.io/tx/${transaction.hash}`
+View transaction on VITCScan: https://vitcscan.com/tx/${transaction.hash}`
 
             const sendingAddress = await Address.findOne({
                 address: transaction.from,
                 network: "VITE"
             })
             const notif = parseTransactionType(sendingAddress?.handles?.[0], transaction.sender_handle)
-            if(notif.type === "rewards")return
-            if(notif.type === "airdrop")return
             text = notif.text
                 .replace("{amount}", `${displayNumber} ${tokenNameToDisplayName(tokenName)}`)
                 + text
-            if(notif.type === "tip"){
-                let mention = ""
-                if(notif.platform == "Discord"){
-                    const user = (await parseDiscordUser(notif.id))[0]
-                    if(user)mention = user.tag
-                }else if(notif.platform == "Twitter"){
-                    mention = `https://twitter.com/i/user/${notif.id}`
-                }else{
-                    mention = `${notif.platform}:${notif.id}`
+            switch(notif.type){
+                case "rewards":
+                case "airdrop":
+                    return
+
+                case "tip": {
+                    let mention = ""
+                    if(notif.platform == "Discord"){
+                        const user = (await parseDiscordUser(notif.id))[0]
+                        if(user)mention = user.tag
+                    }else if(notif.platform == "Twitter"){
+                        mention = `https://twitter.com/i/user/${notif.id}`
+                    }else{
+                        mention = `${notif.platform}:${notif.id}`
+                    }
+                    text = text.replace("{mention}", mention)
+                    break
                 }
-                text = text.replace("{mention}", mention)
+                
+                case "bank": {
+                    const project = await APIProject.findOne({
+                        project_id: notif.project_id
+                    })
+                    text = text.replace("{name}", project.name)
+                }
             }
             const [id] = address.handles[0].split(".")
             switch(address.handles[0].split(".").slice(1).join(".")){
                 case "Discord": {
-                    if(notif.type === "tip" && !sentHashes.has(transaction.from_hash))break
+                    if(notif.type === "tip" && !sentHashes.has(transaction.from_hash))return
                     const user = await client.users.fetch(id)
-                    if(!user)break
+                    if(!user)return
                     user.send(text).catch(()=>{})
                     break
                 }
@@ -138,6 +156,45 @@ View transaction on vitescan: https://vitescan.io/tx/${transaction.hash}`
                     ])
                     await message.edit({
                         embeds: [embed]
+                    })
+                    break
+                }
+                case "Discord.Link": {
+                    // Add to linked wallets
+                    const user = await client.users.fetch(id)
+                    if(!user)return
+                    await viteQueue.queueAction(transaction.to, async () => {
+                        // Need to check the memo
+                        const [
+                            sendBlock,
+                            secret
+                        ] = await Promise.all([
+                            requestWallet("get_account_block", transaction.from_hash),
+                            WalletLinkingSecret.findOne({
+                                address: address
+                            })
+                        ])
+                        if(!secret)return
+                        const memo = Buffer.from(sendBlock.data || "", "base64")
+                        if(!memo.equals(Buffer.from(secret.secret, "hex"))){
+                            await user.send(`You tried to link \`${transaction.from}\` to your Discord Account, but the secret was invalid. Contact <@${BOT_OWNER}> if you think there's an issue.`).catch(()=>{})
+                            return
+                        }
+                        const exists = await DiscordLinkedWallet.findOne({
+                            address: transaction.from
+                        })
+                        if(exists){
+                            await user.send(`You tried to link \`${transaction.from}\` to your Discord Account, but this address is already linked with <@${exists.user}>. Contact <@${BOT_OWNER}> if you think there's an issue.`).catch(()=>{})
+                        }else{
+                            await DiscordLinkedWallet.create({
+                                user: id,
+                                address: transaction.from
+                            })
+                            // Change the secret
+                            secret.secret = randomBytes(64).toString("hex")
+                            await secret.save()
+                            await user.send(`Successfully linked \`${transaction.from}\` with your Discord Account!`).catch(()=>{})
+                        }
                     })
                 }
             }
@@ -214,7 +271,11 @@ client.on("messageCreate", async message => {
         return
     }
     // lol bananoman servers
-    if(disabledServers[message.guildId])return
+    if(disabledServers[message.guildId]){
+        // Why are we even here
+        await message.guild.leave()
+        return
+    }
     if(!message.content.startsWith(prefix))return
     if(message.author.bot){
         // exceptions lol

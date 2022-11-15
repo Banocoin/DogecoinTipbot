@@ -1,4 +1,4 @@
-import { client } from "."
+import { client, discordBotId, publicBot } from "."
 import * as lt from "long-timeout"
 import { durationUnits, randomFromArray, wait } from "../common/util"
 import { getVITEAddressOrCreateOne } from "../wallet/address"
@@ -12,7 +12,7 @@ import { generateDefaultEmbed } from "./util"
 import GiveawayEntry from "../models/GiveawayEntry"
 import GiveawayWinner from "../models/GiveawayWinner"
 import { requestWallet } from "../libwallet/http"
-import Address from "../models/Address"
+import Address, { IAddress } from "../models/Address"
 import events from "../common/events"
 import asyncPool from "tiny-async-pool"
 import { tokenPrices } from "../common/price"
@@ -146,15 +146,21 @@ export async function refreshBotEmbed(giveaway:IGiveaway){
 
 export const giveaway_channels = {
     "862416292760649768": [],
-    "907279842716835881": []
+    "907279842716835881": [],
+    // minion
+    "955431655810674759": []
 }
 export const giveaway_posting_channel = {
     "862416292760649768": "884088302020481074",
-    "907279842716835881": "907279844319035406"
+    "907279842716835881": "907279844319035406",
+    // minion
+    "955431655810674759": "960247117497139251"
 }
 export const giveaways_ping_roles = {
     "862416292760649768": ["883567202492620830"],
-    "907279842716835881": ["907393249965137982"]
+    "907279842716835881": ["907393249965137982"],
+    // minion
+    "955431655810674759": ["985840304185835530"]
 }
 
 export async function startGiveaway(giveaway:IGiveaway){
@@ -279,7 +285,7 @@ export async function searchStuckGiveaways(){
             $regex: "^\\d+\\.Discord\\.Giveaway$"
         }
     })
-    await asyncPool(25, addresses, async address => {
+    await asyncPool(25, addresses, async (address:IAddress) => {
         const mess_id = address.handles[0].split(".")[0]
         const giveaway = await Giveaway.findOne({
             message_id: mess_id
@@ -315,14 +321,14 @@ export async function searchStuckGiveaways(){
                 break
             }
             if(!recipient){
-                console.warn(`Stuck giveaway account: ${address.address}`)
-                return
+                recipient = blocks[Math.floor(Math.random()*blocks.length)].fromAddress
             }
         }else{
             recipient = (await getVITEAddressOrCreateOne(winner.user_id, "Discord")).address
         }
         // we got the funds and the recipient, send it
         for(const token of tokens){
+            console.log(`Emptying giveaway ${address.address} ${token} to ${recipient}`)
             await requestWallet(
                 "send",
                 address.address,
@@ -339,6 +345,7 @@ export async function searchStuckGiveaways(){
 
 events.once("wallet_ready", async () => {
     // Empty stuck giveaways
+    if(publicBot !== discordBotId)return
     // eslint-disable-next-line no-constant-condition
     while(true){
         await searchStuckGiveaways()

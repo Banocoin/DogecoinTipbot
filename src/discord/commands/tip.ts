@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { allowedCoins, defaultEmoji, disabledTokens, tokenIds } from "../../common/constants";
+import { allowedCoins, defaultEmoji, disabledTokens, tokenDecimals, tokenIds, tokenNames, tokenTickers } from "../../common/constants";
 import { convert, tokenNameToDisplayName } from "../../common/convert";
 import { getVITEAddressOrCreateOne } from "../../wallet/address";
 import Command from "../command";
@@ -14,6 +14,10 @@ import { whitelistedBots } from "../constants";
 import { publicBot, sentHashes } from "..";
 import { parseAmount } from "../../common/amounts";
 import { SendTransaction } from "../../wallet/events";
+import TipWebhook from "../../models/TipWebhook";
+import { tokenPrices } from "../../common/price";
+import * as tweetnacl from "tweetnacl"
+import fetch from "node-fetch";
 
 export default new class TipCommand implements Command {
     description = "Tip someone on Discord"
@@ -42,6 +46,9 @@ Examples:
         currencyOrRecipient = currencyOrRecipient || "vitc"
         if(!amount)return help.execute(message, [command])
         if(isDiscordUserArgument(currencyOrRecipient)){
+            if(command === "tip"){
+                return message.reply(`Looks like you tried to use the \`${process.env.DISCORD_PREFIX}tip\` command without a currency. Please note that this syntax is now *deprecated*. Please always specify the currency using the tip command.`)
+            }
             // user here
             recipientsRaw.push(currencyOrRecipient)
             currencyOrRecipient = "vitc"
@@ -70,7 +77,7 @@ Examples:
             try{
                 await message.react("❌")
             }catch{}
-            await message.reply(`The token **${currencyOrRecipient}** is currently disabled, because: ${disabledTokens[tokenIds[currencyOrRecipient]]}`)
+            await message.reply(`The token **${currencyOrRecipient}** is currently disabled because: ${disabledTokens[tokenIds[currencyOrRecipient]]}`)
             return
         }
         if(!(allowedCoins[message.guildId] || [tokenIds[currencyOrRecipient]]).includes(tokenIds[currencyOrRecipient])){
@@ -170,7 +177,9 @@ Examples:
                     const tx = await requestWallet(
                         "bulk_send",
                         address.address, 
-                        addresses.map(e => [
+                        addresses
+                        .slice(i*chunk, i*chunk+chunk)
+                        .map(e => [
                             e.address,
                             amount
                         ]), 
@@ -230,6 +239,72 @@ Examples:
             try{
                 await message.react("909408282307866654")
             }catch{}
+            if(recipients.find(e => e.bot)){
+                const webhooks = await TipWebhook.find({
+                    $or: recipients.map(e => (e.bot && {
+                        bot_id: e.id
+                    })).filter(e => !!e)
+                })
+                const promises = []
+                for(const webhook of webhooks){
+                    let body = null
+                    switch(webhook.version){
+                        case 0: {
+                            body = {
+                                type: "tip",
+                                from: message.author.id,
+                                to: webhook.bot_id,
+                                message: message.id,
+                                channel: message.channel.id,
+                                guild: message.guild?.id,
+                                raw_amount: convert(amountParsed, currencyOrRecipient, "RAW"),
+                                amount: convert(convert(amountParsed, currencyOrRecipient, "RAW"), "RAW", tokenTickers[token]),
+                                token: {
+                                    id: token,
+                                    ticker: tokenTickers[token],
+                                    decimals: tokenDecimals[tokenTickers[token]],
+                                    name: tokenNames[tokenTickers[token]],
+                                    prices: {
+                                        usd: tokenPrices[token+"/"+tokenIds.USDT]?.closePrice,
+                                        vite: tokenPrices[token+"/"+tokenIds.VITE]?.closePrice,
+                                        btc: tokenPrices[token+"/"+tokenIds.BTC]?.closePrice,
+                                        eth: tokenPrices[token+"/"+tokenIds.ETH]?.closePrice,
+                                    }
+                                },
+                                recipients: recipients.map(e => e.id)
+                            }
+                        }
+                    }
+                    if(!body)continue
+                    const str = JSON.stringify(body)
+                    // VitaBot Public key: 909ddbfd12d5ad92fd213b769753a4b99778b2d36e0a0b5699b72041465299f2
+                    const signature = tweetnacl.sign.detached(
+                        Buffer.from(str, "utf8"),
+                        Buffer.from(
+                            process.env.SIGNATURE_KEY,
+                            "hex"
+                        )
+                    )
+                    promises.push(fetch(webhook.webhook_url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "body-signature": Buffer.from(signature).toString("hex"),
+                            "public-key": Buffer.from(
+                                tweetnacl.sign.keyPair.fromSecretKey(
+                                    Buffer.from(
+                                        process.env.SIGNATURE_KEY,
+                                        "hex"
+                                    )
+                                ).publicKey
+                            ).toString("hex")
+                        },
+                        body: Buffer.from(str, "utf8")
+                    }).catch(console.error))
+                }
+
+                Promise.all(promises)
+            }
         })
     }
 }

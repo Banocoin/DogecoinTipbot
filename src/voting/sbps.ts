@@ -3,7 +3,7 @@ import "../common/load-env"
 
 const startDates = [
     new Date("2021-11-26T05:00:00.000Z"),
-    new Date("2021-11-26T05:00:00.000Z"),
+    new Date("2021-12-06T05:00:00.000Z"),
     new Date("2021-11-26T05:00:00.000Z"),
     new Date("2021-11-26T05:00:00.000Z"),
     new Date("2021-11-26T05:00:00.000Z"),
@@ -11,13 +11,16 @@ const startDates = [
     new Date("2021-11-26T05:00:00.000Z"),
     new Date("2021-11-26T05:00:00.000Z"),
     new Date("2022-02-10T05:00:00.000Z"),
-    new Date("2021-12-17T05:00:00.000Z")
+    new Date("2021-12-17T05:00:00.000Z"),
+    new Date("2022-08-26T05:00:00.000Z"),
+    new Date("2022-11-02T05:00:00.000Z"),
+    new Date("2022-11-02T05:00:00.000Z"),
 ]
 
 // that's all i could gather
 const sbpList = [
-    "VitaminCoinSBP",
-    "ViNo_Community_Node",
+    "VitaminCoin_SBP",
+    "ViNo_Community_SBP",
     "SwissVite.org",
     "vite.bi23",
     "InfStones",
@@ -25,7 +28,11 @@ const sbpList = [
     "N4Q.org",
     "Elegance.Vite",
     "ViCat_SBP",
-    "Vitoge_SBP"
+    "Vitoge_SBP",
+    // dao being tracked
+    "-VitaminCoinDAO",
+    "MakingCents_SBP",
+    "Kivinode"
 ]
 const sbpsIcon = [
     "https://cdn.discordapp.com/attachments/913843385067008023/913853269753856020/Vitc_Icon_Dark_Tilt_.png",
@@ -37,7 +44,10 @@ const sbpsIcon = [
     null,
     null,
     "https://cdn.discordapp.com/attachments/937601374504509450/940568012652703754/coin_green.png",
-    null
+    null,
+    "https://cdn.discordapp.com/attachments/913843385067008023/913853269753856020/Vitc_Icon_Dark_Tilt_.png",
+    "https://cdn.discordapp.com/icons/975366194137825361/1ed0d0069ff41509caaadb6c34988fdf.png?size=4096",
+    "https://media.discordapp.net/attachments/928710733645090877/1037087958945234944/kivi_token_master.png"
 ]
 
 import * as vite from "@vite/vitejs"
@@ -123,7 +133,7 @@ export const tokenNames = {
 }
 
 export const sbpsAddresses = {}
-for(let i = 0;i < sbpList.length;i++){
+for(let i = 0; i < sbpList.length; i++){
     const sbp = sbpList[i]
     const address = wallet.deriveAddress(i)
     sbpsAddresses[address.address] = sbp
@@ -132,13 +142,25 @@ for(let i = 0;i < sbpList.length;i++){
 async function broadcastMessage(tx:ReceiveTransaction){
     const index = sbpList.indexOf(sbpsAddresses[tx.to])
     const balances = await getBalances(tx.to)
-    const startViteValue = new BigNumber(100)
+    let startViteValue = new BigNumber(100)
+    switch(sbpsAddresses[tx.to]){
+        case "-VitaminCoinDAO": {
+            // dao
+            const pair = tokenPrices[tokenIds.VITC+"/"+tokenIds.VITE]
+            // 10k vitc
+            startViteValue = new BigNumber(10000)
+            .times(pair?.closePrice || 0)
+            break
+        }
+    }
     let totalViteValue = new BigNumber(0)
     for(const tokenId in balances){
         const pair = tokenPrices[tokenId+"/"+tokenIds.VITE]
+        if(!pair || !tokenTickers[tokenId])continue
+        const ticker = tokenTickers[tokenId]
 
         const viteValue = new BigNumber(pair?.closePrice || 0)
-        .times(convert(balances[tokenId], "RAW", "VITE"))
+        .times(convert(balances[tokenId], "RAW", ticker))
 
         totalViteValue = totalViteValue.plus(viteValue)
     }
@@ -165,7 +187,7 @@ Yearly: **${percent.times(365).div(elapsedDays).toFixed(2)}%**
         ],
         username: sbpsAddresses[tx.to] || "Unknown SBP",
         avatarURL: sbpsIcon[index]
-    })
+    }).catch(console.error)
     await fetch("https://vite-api.thomiz.dev/sbps/"+sbpsAddresses[tx.to]+"/apy", {
         method: "post",
         headers: {
@@ -193,7 +215,10 @@ export let wsProvider
     await new Promise((resolve) => {
         wsProvider = new vite.ViteAPI(wsService, resolve)
     })
+    await registerEvents()
     for(const address in sbpsAddresses){
+        console.log(`${address}: ${sbpsAddresses[address]}`)
+        if(sbpsAddresses[address].startsWith("-"))continue
         const voted = await getVotedSBP(address)
         if(voted?.blockProducerName !== sbpsAddresses[address]){
             console.log(`Changing SBP for ${address} from ${voted?.blockProducerName} to ${sbpsAddresses[address]}.`)
@@ -201,16 +226,25 @@ export let wsProvider
             const addr = wallet.deriveAddress(addressIndex)
             await changeSBP(addr, sbpsAddresses[address])
         }
-        console.log(`${address}: ${sbpsAddresses[address]}`)
     }
     console.log("[VITE] Connected to node")
-    await registerEvents()
     
     wsProvider._provider.on("connect", registerEvents)
 })()
 
 async function registerEvents(){
     await Promise.all([
+        ...Object.keys(sbpsAddresses).map(async (address) => {
+            const blocks = await wsProvider.request(
+                "ledger_getUnreceivedBlocksByAddress",
+                address,
+                0,
+                1000
+            )
+            for(const block of blocks){
+                receive(block)
+            }
+        }),
         wsProvider.subscribe("createAccountBlockSubscription")
         .then(AccountBlockEvent => {
             AccountBlockEvent.on(async (result) => {
@@ -283,8 +317,8 @@ export async function receive(block: any){
     const sbpName = sbpsAddresses[block.toAddress]
     const addressIndex = sbpList.indexOf(sbpName)
     const address = wallet.deriveAddress(addressIndex)
-    console.log(`Receiving ${block.hash} for ${address.address}`)
     const hash = await viteQueue.queueAction(address.address, async () => {
+        console.log(`Receiving ${block.hash} for ${address.address}`)
         const accountBlock = vite.accountBlock.createAccountBlock("receive", {
             address: address.address,
             sendBlockHash: block.hash

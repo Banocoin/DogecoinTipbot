@@ -20,7 +20,7 @@ export async function searchAirdrops(){
         const message = reaction.message
         const airdrop = watchingAirdropMap.get(message.id)
         if(!airdrop)return
-        console.log(reaction.emoji.id || reaction.emoji.name, serverEmojis[reaction.message.guildId])
+
         if(serverEmojis[reaction.message.guildId]){
             if(reaction.emoji.id !== serverEmojis[reaction.message.guildId] && reaction.emoji.name !== serverEmojis[reaction.message.guildId])return reaction.remove().then(()=>{})
         }else{
@@ -98,7 +98,7 @@ ${Object.entries(balances).map(tkn => {
     }**)`
 }).join("\n")}
 
-[Link to Wallet](https://vitescan.io/address/${address.address})
+[Link to Wallet](https://vitcscan.com/address/${address.address})
 
 ${!ended ? `**React with ${emoji} to participate!**` : ""}`)
     return embed

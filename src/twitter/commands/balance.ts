@@ -48,7 +48,7 @@ ${Object.keys(balances).map(tokenId => {
     return `${tokenNameToDisplayName(displayToken)}: ${formatNumber(displayBalance)}`
 }).join("\n")}`
 
-// View on vitescan: https://vitescan.io/address/${address.address}
+// View on VITCScan: https://vitcscan.com/address/${address.address}
         })
     }
 }

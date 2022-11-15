@@ -144,7 +144,7 @@ export default new class WithdrawCommand implements Command {
                 message.chat.id,
                 `Your withdraw was processed!
 
-View transaction on vitescan: https://vitescan.io/tx/${tx.hash}`,
+View transaction on VITCScan: https://vitcscan.com/tx/${tx.hash}`,
                 {
                     reply_to_message_id: message.message_id
                 }

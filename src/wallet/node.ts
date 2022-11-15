@@ -39,7 +39,9 @@ export const tokenIds = {
     ETH: "tti_687d8a93915393b219212c73",
     VINU: "tti_541b25bd5e5db35166864096",
     UST: "tti_3d482aaceb076a729cb3967b",
-    LUNA: "tti_60ce61fb1bf38a32be3bfb91"
+    LUNA: "tti_60ce61fb1bf38a32be3bfb91",
+    NYA: "tti_14559f510fa839880af467d1",
+    KNOBSACK: "tti_93939ea53d7726c1c0ee0196"
 }
 export const tokenTickers = {
     [tokenIds.VITE]: "VITE",
@@ -53,7 +55,9 @@ export const tokenTickers = {
     [tokenIds.ETH]: "ETH",
     [tokenIds.VINU]: "VINU",
     [tokenIds.UST]: "UST",
-    [tokenIds.LUNA]: "LUNA"
+    [tokenIds.LUNA]: "LUNA",
+    [tokenIds.NYA]: "NYA",
+    [tokenIds.KNOBSACK]: "KNOBSACK"
 }
 
 export const tokenDecimals = {
@@ -71,7 +75,9 @@ export const tokenDecimals = {
     ETH: 18,
     VINU: 18,
     UST: 6,
-    LUNA: 6
+    LUNA: 6,
+    NYA: 18,
+    KNOBSACK: 0
 }
 
 export const tokenNames = {
@@ -92,7 +98,9 @@ export const tokenNames = {
     VICAT: "ViCat",
     VIVA: "Viva",
     UST: "UST",
-    LUNA: "Luna"
+    LUNA: "Luna",
+    "NYA-000": "Nyanold",
+    KNOBSACK: "Bag Of Dicks"
 }
 
 export let wsProvider
@@ -227,7 +235,7 @@ export async function burn(address:IAddress, amount: string, tokenId: string){
     const keyPair = vite.wallet.deriveKeyPairByIndex(address.seed, 0)
     
     const tokenInfo = await wsProvider.request("contract_getTokenInfoById", tokenId)
-    if(!tokenInfo.ownBurnOnly && address.address !== tokenInfo.owner){
+    if(!tokenInfo.isOwnerBurnOnly || address.address === tokenInfo.owner){
         const accountBlock = vite.accountBlock.createAccountBlock("burnToken", {
             address: address.address,
             tokenId,
@@ -332,6 +340,8 @@ export async function sendTX(address:string, accountBlock:any):Promise<string>{
                     if(err?.error?.code === -35005){
                         if(i !== 2)await wait(1500)
                         i++
+                    }else{
+                        throw err
                     }
                 }
             }

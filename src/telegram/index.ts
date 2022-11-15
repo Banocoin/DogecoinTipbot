@@ -10,17 +10,19 @@ import express from "express"
 import { isWalletReady, walletReadyPromise } from "../cryptocurrencies/vite"
 
 const token = process.env.TELEGRAM_VITCTIPBOT
-export const bot = new TelegramBot(token)
-bot.setWebHook("https://telegram.vitamin.tips/bot"+token)
+export const bot = new TelegramBot(token, {
+    polling: true
+})
+//bot.setWebHook("https://telegram.vitamin.tips/bot"+token)
 express()
 .disable("x-powered-by")
 .use(express.json())
 .post(`/bot${token}`, (req, res) => {
   bot.processUpdate(req.body)
   res.sendStatus(200)
-}).listen(3090, () => {
+})/*.listen(3090, () => {
   console.log(`Express server is listening on ${3090}`);
-})
+})*/
 export const username = "vitctipbot"
 
 export const commands = new Map<string, Command>()

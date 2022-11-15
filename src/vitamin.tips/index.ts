@@ -5,6 +5,12 @@ import tips from "./api/tips"
 import address from "./api/address"
 import * as Discord from "discord.js"
 import Twit from "twitter-api-v2"
+import bank from "./api/bank"
+import { randomBytes, randomUUID } from "crypto"
+import { getVITEAddressOrCreateOne } from "../wallet/address"
+import APIProject from "../models/APIProject"
+import vpow from "./api/vpow"
+import vite from "./api/vite"
 
 export const discordClient = new Discord.Client({
     intents: [
@@ -32,10 +38,30 @@ export const app = express()
     Router()
     .use("/address", address)
     .use("/tips", tips)
+    .use("/bank", bank)
+    .use("/vpow", vpow)
+    .use("/vite", vite)
 )
 
 dbPromise.then(() => {
     app.listen(3060, () => {
         console.log("Listening on http://127.0.0.1:3060")
     })
+
+    /*
+    const id = randomUUID()
+
+    getVITEAddressOrCreateOne(id, "Bank")
+    .then(address => {
+        const key = randomBytes(32).toString("hex")
+        console.log(key)
+        APIProject.create({
+            key,
+            name: "Proof of Sweat",
+            addresses: [
+                address.address
+            ],
+            project_id: id
+        })
+    })*/
 })

@@ -1,6 +1,6 @@
 import fetch from "node-fetch"
 import { Gateway } from "../common/vitex-gateway"
-import { ReceiveTransaction, SBPMessageStats, SendTransaction } from "../wallet/events"
+import { ReceiveTransaction, SendTransaction } from "../wallet/events"
 
 export type GetTokenResponse = {
     token_ids: {
@@ -44,8 +44,6 @@ export type GetSBPVotesResponse = {
     }
 }
 
-export type SendSBPMessagesResponse = Record<string, never>
-
 export type GetSBPRewardsPendingWithdrawalResponse = {
     blockProducingReward: string,
     votingReward: string,
@@ -65,32 +63,38 @@ export interface WalletResponses {
     get_account_block: GetAccountBlockResponse,
     get_account_blocks: GetAccountBlocksResponse,
     get_sbp_votes: GetSBPVotesResponse,
-    send_sbp_messages: SendSBPMessagesResponse,
+    get_vitcswap_pairs: string[],
+    get_vitcswap_conversion: string,
+    do_swap_vitcswap: SendResponse,
     get_sbp_rewards_pending_withdrawal: GetSBPRewardsPendingWithdrawalResponse,
     withdraw_sbp_rewards: SendResponse,
     get_gateways: {
         [tokenId: string]: Gateway
     },
     restart: null,
-    process_account: null
+    process_account: null,
+    resolve_vitens: string
 }
 
 export interface WalletRequestParams {
-    bulk_send: [string, [string, string][], string]|[string, [string, string][], string, number],
-    get_balances: [string],
+    bulk_send: [from:string, payouts:[to:string, amount:string][], tokenId:string, quotaTimeout?:number],
+    get_balances: [address:string],
     get_tokens: [],
-    send: [string, string, string, string],
-    burn: [string, string, string],
-    get_account_block: [string],
-    get_account_blocks: [string, string, string, number],
-    get_sbp_votes: [string]|[string, number],
-    send_sbp_messages: [SBPMessageStats],
-    get_sbp_rewards_pending_withdrawal: [string],
-    withdraw_sbp_rewards: [string, string, string],
-    send_wait_receive: [string, string, string, string],
+    send: [from:string, to:string, amount:string, tokenId:string],
+    burn: [from:string, amount:string, tokenId:string],
+    get_account_block: [hash:string],
+    get_account_blocks: [address:string, hash:string, tokenId:string, limit:number],
+    get_sbp_votes: [name:string, cycle?:number],
+    get_sbp_rewards_pending_withdrawal: [sbpName:string],
+    withdraw_sbp_rewards: [from:string, to:string, sbpName:string],
+    send_wait_receive: [from:string, to:string, amount:string, tokenId:string],
     get_gateways: [],
+    get_vitcswap_pairs: [],
+    get_vitcswap_conversion: [amount:string, token0:string, token1:string],
+    do_swap_vitcswap: [from:string, amount:string, token0:string, token1:string, minimum:string, recipient:string]
     restart: [],
-    process_account: [string]
+    process_account: [address:string],
+    resolve_vitens: [name:string]
 }
 
 export async function requestWallet<Action extends keyof WalletResponses>(action:Action, ...params: WalletRequestParams[Action]):Promise<WalletResponses[Action]>{
@@ -105,7 +109,7 @@ export async function requestWallet<Action extends keyof WalletResponses>(action
         })
     })
     const body = await res.json()
-    if(body && "error" in body){
+    if(typeof body === "object" && body && "error" in body){
         const err = Error()
         err.message = body.error.message
         err.name = body.error.name

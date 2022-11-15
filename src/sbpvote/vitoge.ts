@@ -18,12 +18,12 @@ const VITC_TREASURY = "vite_4041e7e3d80f879001b7ff67dbef4be23827b65131ef2c79ac"
 
 const destinations = [
     {
-        percent: 40,
+        percent: 50,
         // voters distribution
         address: "SBP.Rewards.Vitoge"
     },
     {
-        percent: 60,
+        percent: 50,
         // Vitoge treasury
         address: "vite_3286b588ac2808e52f70e0a5e73b335ace8750c4fc6103eaf2"
     }

@@ -52,7 +52,7 @@ Examples:
             )
             return
         }
-        const userList = (await getActiveUsers(message.guildId))
+        const userList = (await getActiveUsers(message.guildId, true))
             .filter(e => e !== message.author.id)
         if(userList.length < 2){
             await message.reply(`There are less than 2 active users. Cannot random tip. List of active users is: ${userList.map(e => client.users.cache.get(e)?.tag).join(", ")||"empty"}`)

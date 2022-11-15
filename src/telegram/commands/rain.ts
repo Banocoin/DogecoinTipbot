@@ -116,7 +116,7 @@ export default new class StartCommand implements Command {
                 return
             }
             const rawIndividualAmount = convert(individualAmount, currency, "RAW")
-            const txs:BulkSendResponse = await requestWallet(
+            await requestWallet(
                 "bulk_send",
                 address.address, 
                 addresses.map(e => [

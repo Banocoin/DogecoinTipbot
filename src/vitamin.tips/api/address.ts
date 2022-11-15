@@ -5,11 +5,33 @@ import * as vite from "@vite/vitejs"
 import { parseTransactionType } from "../../wallet/address";
 import { discordClient, twitc } from "..";
 import TelegramUsername from "../../models/TelegramUsername";
+import RedditUsername from "../../models/RedditUsername";
+import APIProject from "../../models/APIProject";
 
 const addressQueue = new ActionQueue<string>()
 const cache = {}
 
 export default Router()
+.get("/discord/:id", async (req, res) => {
+    const id = req.params.id
+    if(/^\d+$/.test(id)){
+        const address = await Address.findOne({
+            handles: `${id}.Discord`
+        })
+        if(address){
+            res.status(200).send({
+                address: address.address
+            })
+            return
+        }
+    }
+    res.status(400).send({
+        error: {
+            name: "UserError",
+            message: "User not found"
+        }
+    })
+})
 .post(
     "/lookup",
     json(),
@@ -88,16 +110,34 @@ export default Router()
                     name = "Vitamin Coin Discord Faucet Channel"
                     break
                 }
+                case "bank":{
+                    const project = await APIProject.findOne({
+                        project_id: parsed.project_id
+                    })
+                    name = project.name
+                    break
+                }
                 case "tip":{
                     switch(parsed.platform){
                         case "Discord": {
                             const user = await discordClient.users.fetch(parsed.id).catch(()=>null)
-                            name = user?.tag ? `${user.tag} (Discord)` : "Unknown Discord Tipbot"
+                            name = user?.tag ? `${user.tag} (Discord)` : "Unknown Discord Tipbot Address"
                             break
                         }
                         case "Twitter": {
                             const user = await twitc.v2.user(parsed.id).catch(() => null)
-                            name = user?.data ? `@${user.data.username} (Twitter)` : "Unknown Twitter Tipbot"
+                            name = user?.data ? `@${user.data.username} (Twitter)` : "Unknown Twitter Tipbot Address"
+                            break
+                        }
+                        case "Reddit": {
+                            const user = await RedditUsername.findOne({
+                                user_id: parsed.id
+                            })
+                            if(user?.username){
+                                name = `u/${user.username} (Reddit)`
+                            }else{
+                                name = `${parsed.id} (Reddit)`
+                            }
                             break
                         }
                         case "Telegram": {
@@ -119,6 +159,10 @@ export default Router()
                 }
                 case "rewards": {
                     name = "VitaminCoinSBP Distribution Address"
+                    break
+                }
+                case "vpow.rewards": {
+                    name = "VPoW Distribution Address"
                     break
                 }
                 case "claim.rewards": {

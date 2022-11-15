@@ -89,7 +89,7 @@ export default new class TipCommand implements Command {
                 )
                 return
             }
-            const tx = await requestWallet("burn", address.address, convert(amountParsed, currency, "RAW"), token)
+            await requestWallet("burn", address.address, convert(amountParsed, currency, "RAW"), token)
             const pair = tokenPrices[token+"/"+tokenIds.USDT]
             await bot.sendMessage(
                 message.chat.id,

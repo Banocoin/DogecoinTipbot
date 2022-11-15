@@ -14,6 +14,8 @@ import fetch from "node-fetch"
 import { WebhookClient } from "discord.js";
 import Twit from "twitter-api-v2"
 import { getBlockedAddresses } from "./util";
+import Address from "../models/Address";
+import ExternalAddressBlacklist from "../models/ExternalAddressBlacklist";
 
 const ws = new WebsocketConnection()
 
@@ -29,11 +31,23 @@ const twitc = new Twit({
 
 const minimums = {
     [tokenIds.VITE]: convert("400", "VITE", "RAW"),
-    [tokenIds.VIVA]: convert("100000", "VIVA", "RAW"),
+    [tokenIds.VIVA]: convert("5000", "VIVA", "RAW"),
     [tokenIds.VITC]: convert("6000", "VITC", "RAW"),
+    [tokenIds.USDT]: convert("5", "USDT", "RAW"),
     [tokenIds.UST]: convert("5", "UST", "RAW"),
     // 5$ in Luna
-    [tokenIds.LUNA]: convert("0.1", "LUNA", "RAW")
+    [tokenIds.LUNA]: convert("500", "LUNA", "RAW"),
+    // 1k sats
+    [tokenIds.BTC]: convert("10000", "SATS", "RAW"),
+    [tokenIds.ETH]: convert("0.0001", "ETH", "RAW"),
+    [tokenIds.WAXP]: convert("17.35", "WAXP", "RAW"),
+    [tokenIds.FTM]: convert("3", "FTM", "RAW"),
+    [tokenIds.SAITO]: convert("200", "SAITO", "RAW"),
+    [tokenIds.AVAX]: convert("0.07", "AVAX", "RAW"),
+    [tokenIds.VICAT]: convert("3720000", "VICAT", "RAW"),
+    [tokenIds.MINION]: convert("10000", "MINION", "RAW"),
+    [tokenIds.MANGO]: convert("50000", "MANGO", "RAW"),
+    [tokenIds.DOGE]: convert("80", "DOGE", "RAW"),
 }
 
 Promise.all([
@@ -66,13 +80,14 @@ Promise.all([
             console.log("refreshing register api")
 
             // refresh balances
-            await fetch("https://register.vitamincoin.org/api/forcerebal?key="+process.env.DAO_REGISTER_KEY)
+            const resp1 = await fetch("http://65.21.199.58:5005/api/forcerebal?key="+process.env.DAO_REGISTER_KEY)
+            await resp1.text()
 
             console.log("Finished refreshing")
             console.log("Fetching register api")
 
             // fetch addresses and balances
-            const res = await fetch("https://register.vitamincoin.org/api/balance?key="+process.env.DAO_REGISTER_KEY)
+            const res = await fetch("http://65.21.199.58:5005/api/balance?key="+process.env.DAO_REGISTER_KEY)
             const addresses = (await res.json()) as {
                 balance: string,
                 address: string  
@@ -81,6 +96,7 @@ Promise.all([
 
             let totalValid = new BigNumber(0)
             const validAddresses = []
+            const promises = []
             for(const {
                 address,
                 balance
@@ -93,9 +109,33 @@ Promise.all([
                     console.log(`Skipping ${address} because less than 1 vitc`)
                     continue
                 }
+                
+                promises.push((async () => {
+                    const [
+                        internalAddress,
+                        externalBlacklist
+                    ] = await Promise.all([
+                        Address.findOne({
+                            address: address
+                        }),
+                        ExternalAddressBlacklist.findOne({
+                            address: address
+                        })
+                    ])
 
-                totalValid = totalValid.plus(balance)
-                validAddresses.push(address)
+                    if(internalAddress?.paused || externalBlacklist){
+                        console.log(`Skipping ${address} because it is blacklisted.`)
+                        return
+                    }
+
+                    totalValid = totalValid.plus(balance)
+                    validAddresses.push(address)
+                })().catch(() => {}))
+            }
+            await Promise.all(promises)
+            if(validAddresses.length < 900){
+                console.error(`DAO ISSUE DETECTED; LESS THAN 900 ADDRESSES IN THE LIST: ${validAddresses.length}`)
+                return
             }
 
             // if nobody is valid (shouldn't happen)
@@ -140,14 +180,14 @@ Promise.all([
             await Promise.all([
                 webhook.send(`Today's 💊 DAO rewards were sent!
 
-**${Math.round(parseFloat(convert(totalVite, "RAW", ticker)))} ${tokenNameToDisplayName(ticker)} ${ticker === "VITE" ? "<:ViteV3:919478731150590012>" : ""}**!
+**${convert(totalVite, "RAW", ticker)} ${tokenNameToDisplayName(ticker)} ${ticker === "VITE" ? "<:ViteV3:919478731150590012>" : ""}**!
 
-Thanks to all our holders! Register on https://register.vitamincoin.org`),
+Thanks to all our holders! Register on <https://register.vitc.org>`),
                 twitc.v1.tweet(`Today's 💊 DAO rewards were sent!
 
-${Math.round(parseFloat(convert(totalVite, "RAW", ticker)))} ${tokenNameToDisplayName(ticker)}!
+${convert(totalVite, "RAW", ticker)} ${tokenNameToDisplayName(ticker)}!
 
-Thanks to all our holders! Register on https://register.vitamincoin.org`)
+Thanks to all our holders! Register on https://register.vitc.org`)
             ])
         })
     })

@@ -6,11 +6,14 @@ export const VITABOT_GITHUB = "https://github.com/jeanouina/VitaBot"
 export const BOT_VERSION = require("../../package.json").version
 
 export type Networks = "VITE"
-export type RawPlatform = "Discord" | "Twitter" | "Telegram"
+export type RawPlatform = "Discord" | "Twitter" | "Telegram" | "Reddit"
 export type Platform = RawPlatform |
-    "Discord.Giveaway" | "Twitter.Giveaway" | "Telegram.Giveaway" | 
-    "Discord.Airdrop" | "Twitter.Airdrop" | "Telegram.Airdrop" | 
-    "Faucet" | "Quota" | "Rewards" | "Rewards.Vitoge"
+    "Discord.Giveaway" | "Discord.Airdrop" | "Discord.Link" |
+    "Twitter.Giveaway" |"Twitter.Airdrop" |
+    "Telegram.Airdrop" | "Telegram.Giveaway" |
+    "Reddit.Airdrop" | "Reddit.Giveaway" |
+    "Faucet" | "Quota" | "Rewards" | "Rewards.Vitoge" |
+    "Bank"
 
 export const tokenIds = {
     VITE: "tti_5649544520544f4b454e6e40",
@@ -29,7 +32,20 @@ export const tokenIds = {
     VICAT: "tti_b3fbb46b9318b3d168ba904e",
     VIVA: "tti_a23c2f75791efafe5fada99e",
     UST: "tti_3d482aaceb076a729cb3967b",
-    LUNA: "tti_60ce61fb1bf38a32be3bfb91"
+    LUNC: "tti_60ce61fb1bf38a32be3bfb91",
+    NYA: "tti_14559f510fa839880af467d1",
+    FTM: "tti_42dda11891d8073f08578289",
+    WAXP: "tti_5c3e2df1729d8d402a8275b8",
+    SAITO: "tti_8364a003d3a2d3c22af015ec",
+    AVAX: "tti_c34069d833433fa25ae97441",
+    XLM: "tti_181e08c4fdb2876956245076",
+    KNOBSACK: "tti_93939ea53d7726c1c0ee0196",
+    MINION: "tti_da32dc3230fd8d25b4f215f9",
+    MANGO: "tti_fb14e5b39124a833fec95fa9",
+    DOGE: "tti_6f1756ae2c4eecbd13dfea82",
+    DOGECOIN: "tti_6f1756ae2c4eecbd13dfea82",
+    LUNA: "tti_f5c5446b8621bea7410fd454",
+    HBIT: "tti_c192655916fa8582e71d9999"
 }
 export const tokenTickers = {
     [tokenIds.VITE]: "VITE",
@@ -48,7 +64,19 @@ export const tokenTickers = {
     [tokenIds.VICAT]: "VICAT",
     [tokenIds.VIVA]: "VIVA",
     [tokenIds.UST]: "UST",
-    [tokenIds.LUNA]: "LUNA"
+    [tokenIds.LUNC]: "LUNC",
+    [tokenIds.NYA]: "NYA",
+    [tokenIds.WAXP]: "WAXP",
+    [tokenIds.FTM]: "FTM",
+    [tokenIds.SAITO]: "SAITO",
+    [tokenIds.AVAX]: "AVAX",
+    [tokenIds.XLM]: "XLM",
+    [tokenIds.KNOBSACK]: "KNOBSACK",
+    [tokenIds.MINION]: "MINION",
+    [tokenIds.MANGO]: "MANGO",
+    [tokenIds.DOGE]: "DOGE",
+    [tokenIds.LUNA]: "LUNA",
+    [tokenIds.HBIT]: "HBIT"
 }
 export const tokenDecimals = {
     VITE: 18,
@@ -61,13 +89,26 @@ export const tokenDecimals = {
     XMR: 12,
     ETH: 18,
     USDT: 6,
-    VINU: 8,
+    VINU: 18,
     MESH: 18,
     VITOGE: 18,
     VICAT: 7,
     VIVA: 18,
     UST: 6,
-    LUNA: 6
+    LUNC: 6,
+    NYA: 18,
+    FTM: 18,
+    SAITO: 18,
+    AVAX: 18,
+    WAXP: 8,
+    XLM: 7,
+    KNOBSACK: 0,
+    MINION: 18,
+    MANGO: 7,
+    DOGE: 8,
+    DOGECOIN: 8,
+    LUNA: 6,
+    HBIT: 8
 }
 export const tokenNames = {
     VITE: "Vite",
@@ -84,7 +125,20 @@ export const tokenNames = {
     VICAT: "ViCat",
     VIVA: "Viva",
     UST: "UST",
-    LUNA: "Luna"
+    LUNC: "Luna Classic",
+    "NYA-000": "Nyanold",
+    FTM: "Fantom",
+    SAITO: "Saito",
+    AVAX: "Avalanche",
+    WAXP: "Wax",
+    XLM: "Stellar",
+    KNOBSACK: "Bag Of Dicks",
+    MINION: "Minion token",
+    MANGO: "Manangos",
+    DOGE: "Dogecoin",
+    DOGECOIN: "Dogecoin",
+    LUNA: "Luna",
+    HBIT: "Hashbit"
 }
 
 export const discordEmojis = {
@@ -95,12 +149,18 @@ export const discordEmojis = {
     BUS: "<:BussyCoin:902882531303649321>",
     XRB: "<:RayBlocks:911705047509925978>",
     BANG: "<:BananoGold:902882181087649842>",
-    VICAT: "<:ViCat:908227330344910869>",
+    VICAT: "<:vicat:965350345888890900>",
     VINU: "<:vitainuhead:913716884476674078>",
     CAPS: "<:bottlecaps:916633374536368138>",
     MESH: "🕸️",
     VIVA: "<:viva:919131398172975106>",
-    PAW: "<:paw:928649144388681728>"
+    PAW: "<:paw:928649144388681728>",
+    NYA: "<:nyani:941269952659337278>",
+    KNOBSACK: "<:knobsack:962707955596288030>",
+    MINION: "<:minion:1004018599742165124>",
+    MANGO: "<:manangos:1037083591651360888>",
+    PEPPER: "<:peppercoin:1037085192076144640>",
+    KIVI: "<:kivi:1037088863383994378>"
 }
 
 export const defaultEmoji = "💊"
@@ -111,13 +171,17 @@ export const serverEmojis = {
     // viva
     "905855357795061832": "919131398172975106",
     // vicat
-    "904753026252816414": "908227330344910869",
+    "904753026252816414": "965350345888890900",
     // vitc
     "907279842716835881": "909415321964789821",
     // brocc
     "904117111763402752": "🥦",
     // mesh
-    "916755202495901837": "🕸️"
+    "916755202495901837": "🕸️",
+    // Knobsack
+    "893911938038374430": "962707955596288030",
+    // MINION
+    "955431655810674759": "1004018599742165124"
 }
 
 export const disabledServers = {
@@ -144,7 +208,11 @@ export const disabledTokens = {
     // Bananoman's benis
     tti_4e9c1e66718021edf8e7604e: "This token has been blacklisted because the owner is engaged in potentially suspicious activities",
     // Bananoman's FUCK
-    tti_b10c254ddb5dc0e939aa22b0: "This token has been blacklisted because the owner is engaged in potentially suspicious activities"
+    tti_b10c254ddb5dc0e939aa22b0: "This token has been blacklisted because the owner is engaged in potentially suspicious activities",
+    // Bananoman's DOGE
+    tti_967c4f6f3bab275907cc8c05: "This token has been blacklisted because the owner is engaged in potentially suspicious activities",
+    // Vitoge
+    tti_22a70f6a6c078f7f976c163e: "Due to recent events within Vitoge, we will no longer support the use of the token in Vitabot, and will be ceasing support of SBP distribution, effective immediately."
 }
 
 export const twitterEmojis = {
@@ -159,42 +227,50 @@ export const twitterEmojis = {
 
 export const AIRDROP_MIN = "$0.10"
 export const AIRDROP_MIN_WHITELISTED = {
-    // vicat
-    tti_b3fbb46b9318b3d168ba904e: "777",
     // brocc
     tti_846b406693379db860b47694: "100k",
     // caps
     tti_4cd2341e510a759dd503cd65: "5",
-    // viva
-    tti_a23c2f75791efafe5fada99e: "100",
-    // best of medical
-    tti_e463f70868334ebd591cff80: "50",
-    // farm
-    tti_ac7cb5fe2e5b1f5240691657: "100",
     // Nyani
-    tti_57ed765fed9121e382efbf54: "10000",
+    tti_14559f510fa839880af467d1: "100",
     // vikey
-    tti_d052213952838e8379bf32b9: "100"
+    tti_d052213952838e8379bf32b9: "100",
+    // knobsack
+    [tokenIds.KNOBSACK]: "69",
+    // Neo Inu
+    tti_9a535b848705000fa5654a72: "1000000",
+    // MINION
+    tti_da32dc3230fd8d25b4f215f9: "100",
+    // sharkbenis
+    tti_319be644dc8d2d6ad154e309: "119",
+    // wookcoin
+    tti_c51a895eb8c3dca03d362e4f: "100k",
+    // PEPPER
+    tti_cd0d3f2fdf25b72485caf435: "500"
 
 }
 export const RAIN_MIN = "$0.10"
 export const RAIN_MIN_WHITELISTED = {
-    // vicat
-    tti_b3fbb46b9318b3d168ba904e: "777",
     // brocc
     tti_846b406693379db860b47694: "100k",
     // caps
     tti_4cd2341e510a759dd503cd65: "5",
-    // viva
-    tti_a23c2f75791efafe5fada99e: "100",
-    // best of medical
-    tti_e463f70868334ebd591cff80: "50",
-    // farm
-    tti_ac7cb5fe2e5b1f5240691657: "100",
     // Nyani
-    tti_57ed765fed9121e382efbf54: "10000",
+    tti_14559f510fa839880af467d1: "100",
     // vikey
-    tti_d052213952838e8379bf32b9: "100"
+    tti_d052213952838e8379bf32b9: "100",
+    // knobsack
+    [tokenIds.KNOBSACK]: "69",
+    // Neo Inu
+    tti_9a535b848705000fa5654a72: "1000000",
+    // MINION
+    tti_da32dc3230fd8d25b4f215f9: "100",
+    // sharkbenis
+    tti_319be644dc8d2d6ad154e309: "119",
+    // wookcoin
+    tti_c51a895eb8c3dca03d362e4f: "100k",
+    // PEPPER
+    tti_cd0d3f2fdf25b72485caf435: "500"
 }
 
 export const allowedCoins = {
@@ -212,7 +288,15 @@ export const allowedCoins = {
         tokenIds.VITE,
         tokenIds.NANO,
         tokenIds.BAN,
-        tokenIds.VX
+        tokenIds.VX,
+        tokenIds.LUNA,
+        tokenIds.UST,
+        tokenIds.SAITO,
+        tokenIds.WAXP,
+        tokenIds.FTM,
+        tokenIds.AVAX,
+        // e
+        "tti_b8bcf8c943627b2c5cbe1805"
     ],
     // VINU
     "904853001850728458": [
@@ -228,19 +312,15 @@ export const allowedCoins = {
     //Mesh
     "916755202495901837": [
         tokenIds.VITE,
-        // Mesh
         tokenIds.MESH
+    ],
+    // Hashbit
+    "1003690095875981392": [
+        tokenIds.VITE,
+        tokenIds.VITC,
+        tokenIds.HBIT // HBIT
     ]
 }
-
-// https://i.imgur.com/1hYUMmF.png
-export const VITABOT_SPLASH = ` ___      ___ ___  _________  ________  ________  ________  _________   
-|\\  \\    /  /|\\  \\|\\___   ___\\\\   __  \\|\\   __  \\|\\   __  \\|\\___   ___\\ 
-\\ \\  \\  /  / | \\  \\|___ \\  \\_\\ \\  \\|\\  \\ \\  \\|\\ /\\ \\  \\|\\  \\|___ \\  \\_| 
- \\ \\  \\/  / / \\ \\  \\   \\ \\  \\ \\ \\   __  \\ \\   __  \\ \\  \\\\\\  \\   \\ \\  \\  
-  \\ \\    / /   \\ \\  \\   \\ \\  \\ \\ \\  \\ \\  \\ \\  \\|\\  \\ \\  \\\\\\  \\   \\ \\  \\ 
-   \\ \\__/ /     \\ \\__\\   \\ \\__\\ \\ \\__\\ \\__\\ \\_______\\ \\_______\\   \\ \\__\\
-    \\|__|/       \\|__|    \\|__|  \\|__|\\|__|\\|_______|\\|_______|    \\|__|`
 
 export const tos = {
     embed: new MessageEmbed()

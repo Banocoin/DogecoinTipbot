@@ -85,7 +85,7 @@ const app = express()
             res.status(500).send({
                 error: {
                     name: err?.name || "Error",
-                    message: err?.message || err ? JSON.stringify(err) : ""
+                    message: err?.message || (err ? JSON.stringify(err) : "")
                 }
             })
         }

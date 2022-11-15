@@ -97,13 +97,14 @@ client.on("messageDelete", async message => {
     })
 })
 
-export async function getActiveUsers(guildId: string):Promise<string[]>{
+export async function getActiveUsers(guildId: string, shouldFilterAdmins: boolean):Promise<string[]>{
     const users = await ActiveStatus.find({
         createdAt: {
             $gt: new Date(Date.now()-durationUnits.m*30)
         },
         guild_id: guildId
     })
-    return users.map(e => e.user_id)
-    .filter(e => !VITC_ADMINS.includes(e))
+    const userIds = users.map(e => e.user_id)
+    if(!shouldFilterAdmins)return userIds
+    return userIds.filter(e => !VITC_ADMINS.includes(e))
 }

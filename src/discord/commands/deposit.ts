@@ -159,7 +159,7 @@ export default new class DepositCommand implements Command {
 > This service is provided by **${gateway.name}** (${gateway.support}). In no event shall VitaBot or its authors be responsible for any lost, misdirected or stolen funds`)
             .setAuthor("Your deposit address")
             await message.author.send({
-                content: depositInfo.data.depositAddress,
+                content: `Address: ${depositInfo.data.depositAddress}\n${depositInfo.data.labelName || "Memo"}: ${depositInfo.data.label}`,
                 embeds: [embed],
                 files: [{
                     attachment: buffer,

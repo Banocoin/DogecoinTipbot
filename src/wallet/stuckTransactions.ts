@@ -20,7 +20,9 @@ export default async function initStuckTransactionService():Promise<never>{
     while(true){
         try{
             await searchStuckTransactions()
-        }catch{}
+        }catch(err){
+            console.error(err)
+        }
     }
 }
 export async function searchStuckTransactions(){

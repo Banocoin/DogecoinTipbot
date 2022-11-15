@@ -149,7 +149,9 @@ export default new class TipCommand implements Command {
                     const tx = await requestWallet(
                         "bulk_send",
                         address.address, 
-                        addresses.map(e => [
+                        addresses
+                        .slice(i*chunk, i*chunk+chunk)
+                        .map(e => [
                             e.address,
                             amount
                         ]), 

@@ -121,7 +121,7 @@ Thanks to all our voters!`
         )
         let text = `
 
-View transaction on vitescan: https://vitescan.io/tx/${transaction.hash}`
+View transaction on VITCScan: https://vitcscan.com/tx/${transaction.hash}`
 
         const sendingAddress = await Address.findOne({
             address: transaction.from,

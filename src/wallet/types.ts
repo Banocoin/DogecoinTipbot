@@ -39,7 +39,6 @@ export const WalletAddressValidator = Joi.string().required().custom(address => 
 export const HashValidator = Joi.string().required().pattern(/^[\dabcdef]{64}$/)
 
 export const AmountValidator = Joi.string().required().pattern(/^\d+$/)
-export const RawAmountValidator = Joi.string().required().pattern(/^\d+$/)
 
 export const TokenIdValidator = Joi.string().required().custom(token => {
     if(!vite.utils.isValidTokenId(token))throw new TypeError("Invalid Token Id")

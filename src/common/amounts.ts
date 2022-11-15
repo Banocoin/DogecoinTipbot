@@ -14,7 +14,7 @@ export const multipliers = {
     q: 15
 }
 
-export function parseAmount(amount:string, currency:string){
+export function parseAmount(amount:string, token:string){
     if(!amount)throw new InvalidAmountError("Couldn't parse amount")
 
     let fiat = null
@@ -35,14 +35,15 @@ export function parseAmount(amount:string, currency:string){
         multiplier = multipliers[unit.toLowerCase()]
     }
     
+    if(amount.startsWith("."))amount = "0" + amount
     if(!/^\d+(\.\d+)?$/.test(amount))throw new InvalidAmountError("Couldn't parse amount")
     let amountParsed = new BigNumber(amount)
 
     if(multiplier !== 0){
         amountParsed = amountParsed.shiftedBy(multiplier)
     }
-    if(fiat && currency !== tokenIds[fiat]){
-        const pair = tokenPrices[currency+"/"+tokenIds[fiat]]
+    if(fiat && token !== tokenIds[fiat]){
+        const pair = tokenPrices[token+"/"+tokenIds[fiat]]
         if(!pair)throw new InvalidAmountError("Couldn't resolve the fiat price of that asset.")
         amountParsed = amountParsed.div(pair.closePrice)
     }

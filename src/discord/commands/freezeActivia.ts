@@ -4,7 +4,7 @@ import ActiveStatus from "../../models/ActiveStatus";
 import ActiviaFreeze from "../../models/ActiviaFreeze";
 import activeQueue from "../activeQueue";
 import Command from "../command";
-import { VITC_ADMINS } from "../constants";
+import { VITC_ADMINS, VITC_MODS } from "../constants";
 import { generateDefaultEmbed, parseDiscordUser } from "../util";
 
 export default new class FreezeActiviaCommand implements Command {
@@ -16,7 +16,7 @@ export default new class FreezeActiviaCommand implements Command {
 
     async execute(message:Message, args: string[], command: string){
         if(!message.guild)return
-        if(!VITC_ADMINS.includes(message.author.id))return
+        if(!VITC_ADMINS.includes(message.author.id) && !VITC_MODS.includes(message.author.id))return
         
         if(command === "lsfreeze"){
             const freezes = await ActiviaFreeze.find()

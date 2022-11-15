@@ -1,7 +1,7 @@
 // This file is ported from https://github.com/vitelabs/go-vite/blob/b5e4e26a547947d680ae2264ec08fefab8e2576b/pow/pow.go#L159
 
 import BigNumber from "bignumber.js";
-import * as blake2 from "blake2"
+import * as vite from "@vite/vitejs"
 
 const two256 = new BigNumber("2").pow("256")
 const one = new BigNumber("1")
@@ -24,12 +24,10 @@ export function targetToDifficulty(target: BigNumber):string {
 }
 
 export function hashPoW(nonce: Buffer, data: Buffer):Buffer {
-    const hash = blake2.createHash("blake2b", {
-        digestLength: 32
-    })
-    hash.update(nonce)
-    hash.update(data)
-    return hash.digest()
+    return Buffer.from(vite.utils.blake2b(Buffer.concat([
+        nonce, 
+        data
+    ]), null, 32))
 }
 
 export function padLeftToBuffer(target: string, length: number):Buffer {
@@ -57,6 +55,5 @@ export function checkPoWNonce(target: string, nonce: Buffer, data: Buffer): bool
     const hash = hashPoW(nonce, data)
     const targetBuffer = padLeftToBuffer(target, 32)
 
-    console.log(hash.toString("hex"), targetBuffer.toString("hex"))
     return quickGreater(hash, targetBuffer)
 }

@@ -7,9 +7,12 @@ import DiscordRainRoles from "../models/DiscordRainRoles";
 export function generateDefaultEmbed(){
     return new MessageEmbed()
     .setColor(VITC_COLOR)
-    .setFooter(client.user?.username || "VitaBot", client.user?.avatarURL({
-        dynamic: true
-    }))
+    .setFooter({
+        text: client.user?.username || "VitaBot",
+        iconURL: client.user?.avatarURL({
+            dynamic: true
+        })
+    })
 }
 
 export const discordSettingsQueue = new ActionQueue<string>()

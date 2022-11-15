@@ -77,11 +77,11 @@ Give one ${tokenNameToDisplayName("VITC")} to more than one person
                 if(tip.recipients.length > 1){
                     return `You have sent ${tip.amount} ${tokenNameToDisplayName(tip.currency)} to ${tip.recipients.length} people each!
                     
-https://vitescan.io/tx/${tip.txs[0][0].hash}`
+https://vitcscan.com/tx/${tip.txs[0][0].hash}`
                 }else{
                     return `You tipped ${tip.amount} ${tokenNameToDisplayName(tip.currency)} to ${tip.recipients[0].username}!
 
-https://vitescan.io/tx/${tip.txs[0][0].hash}`
+https://vitcscan.com/tx/${tip.txs[0][0].hash}`
                 }
             }
         }

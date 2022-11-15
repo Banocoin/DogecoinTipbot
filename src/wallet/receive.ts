@@ -102,12 +102,20 @@ export async function receive(block: any, address: IAddress){
     console.log(`Receiving ${block.hash} for ${address.address}`)
     const keyPair = vite.wallet.deriveKeyPairByIndex(address.seed, 0)
     const hash = await viteQueue.queueAction(address.address, async () => {
-        const accountBlock = vite.accountBlock.createAccountBlock("receive", {
-            address: address.address,
-            sendBlockHash: block.hash
-        })
-        accountBlock.setPrivateKey(keyPair.privateKey)
-        return sendTX(address.address, accountBlock)
+        // retry 3 times
+        for(let i = 0; i<3; i++){
+            try{
+                const accountBlock = vite.accountBlock.createAccountBlock("receive", {
+                    address: address.address,
+                    sendBlockHash: block.hash
+                })
+                accountBlock.setPrivateKey(keyPair.privateKey)
+                return sendTX(address.address, accountBlock)
+            }catch(err){
+                if(i !== 2)continue
+                throw err
+            }
+        }
     })
     
     if(block.tokenInfo.tokenId === tokenIds.VITE && !skipSBPCheck.has(address.address)){

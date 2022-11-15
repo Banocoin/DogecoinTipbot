@@ -62,6 +62,7 @@ Promise.all([
         process.exit()
     }
     await Promise.all(promises)
+    console.log(sbpClaimAddress.address)
 
     ws.on("tx", async tx => {
         if(tx.to !== sbpClaimAddress.address || tx.type !== "receive")return

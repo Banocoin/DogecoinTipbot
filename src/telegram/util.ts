@@ -24,10 +24,10 @@ export const AddressFrozenError = async (message:Message, args:string[], command
 }
 export const AddressBlacklistedError = async (message:Message, args:string[], command:string) => {
     const bltext = `Please review this new blacklist.
+    
+An action was requested, but was blocked because withdraw address is blacklisted.
         
-    An action was requested, but was blocked because withdraw address is blacklisted.
-            
-    @${message.from.username} (${message.from.id}): ${command} ${JSON.stringify(args)}`    
+@${message.from.username} (${message.from.id}): ${command} ${JSON.stringify(args)}`    
     await Promise.all([
         bot.sendMessage(
             message.chat.id,

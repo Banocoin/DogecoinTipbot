@@ -1,23 +1,25 @@
 ![Issues](https://img.shields.io/github/issues-raw/JeanOUINA/VitaBot)
 ![Pull Requests](https://img.shields.io/github/issues-pr-raw/JeanOUINA/VitaBot)
-[![Discord](https://img.shields.io/discord/862416292760649768?logo=discord&style=flat-square&color=%23fffd6c)](https://discord.gg/sUvQufEqna)
+[![Discord](https://img.shields.io/discord/907279842716835881?logo=discord&style=flat-square&color=%23fffd6c)](https://discord.gg/wbnenYG2Cv)
 ---
 # VitaBot
-This is a Discord and Twitter tipbot for [Vitamin Coin 💊](https://vitamincoin.org).
+This is a Discord, Twitter, Reddit and Telegram tipbot for [Vitamin Coin 💊](https://vitamincoin.org), operating on the [Vite](https://vite.org) network.
 <br>
-The discord version is currently in their [official Discord server](https://discord.gg/sUvQufEqna)!
+The discord version is currently in the [VitaminCoin Discord server](https://discord.gg/wbnenYG2Cv)!
 <br>
-The twitter version is currently under ongoing tests, can be used at [@vitctipbot](https://twitter.com/vitctipbot)
+The twitter version can be used at [@vitctipbot](https://twitter.com/vitctipbot)
+<br>
+The reddit version can be used at [u/vitatipbot](https://www.reddit.com/user/vitatipbot)
+<br>
+The telegram version can be used at [@vitctipbot](https://t.me/vitctipbot)
 
 ## What is Vitamin Coin?
-[Vitamin Coin (VITC)](https://vitamincoin.org) is a cryptocurrency built on top of the [VITE](https://www.vite.org/) network (spoiler alert: it's the only healthy crypto).
+[Vitamin Coin (VITC)](https://vitamincoin.org) is a cryptocurrency built on top of the [VITE](https://www.vite.org/) network.
 
 ## What can it do?
 This bot can store, tip, and send (incl. rains, giveaways and airdrops) [VITC](https://vitamincoin.org) and all other tokens on the [VITE](https://www.vite.org/) network!
 <br>
 Every transaction is done on-chain, seeds are stored in a database.
-
-*PS: This bot uses special vitamins to make transations go faster :) (let's call that "plus vite")*
 
 ## How to use this bot?
 
@@ -30,20 +32,13 @@ Otherwise, you can still use the `.help` command to get a list of available comm
 ## Add this bot to your server
 If you want to add this bot in your own server, simply click [here](https://discord.com/oauth2/authorize?client_id=891314894413127740&permissions=515399609408&scope=bot).
 <br>
-You won't have access to every functionality of the bot like giveaways and rains, but tipping will work no matter the server.
 
-If you have special requests for your server, or want me to enable a feature, please [DM me on Discord](https://discord.com/users/696481194443014174).
+If you have special requests for your server, or want me to enable a feature, please [DM me on Discord](https://discord.com/users/696481194443014174) or [Open an issue on GitHub](https://github.com/JeanOUINA/VitaBot/issues/new).
 
-## Should I run my own instance of the bot?
-If you want to run a parallel [VITC](https://vitamincoin.org) tipbot, probably not.
-<br>
-The issues you'll inevitably run into are:
-- Users of the official [VITC](https://vitamincoin.org) tipbot (most of the [VITC](https://vitamincoin.org) users that have either Discord or Twitter) would have to manage depositing on 2 different wallets, which is rather annoying.
-- Having 2 bots to do the exact same thing on a same server or social network is impractical and essentially useless.
+## Can I run my own instance of the bot?
+Short answer: No.
 
-If you want to fork the bot to add a feature, you should rather go to the "Contributing" section instead to get that feature included in the main bot.
-
-If you want to add basically anything else to the bot, you should also go to the "Contributing" section and either ask for it or PR it, as having a bajillion forks of the same project will inevitably lead to confusion.
+VitaBot does not have any License. This means that you can't fork it, or produce derivative work on top of it. The project and its code is copyrighted.
 
 ## Contributing
 If you find a bug, or have an idea for a new feature, you can file an issue/PR.
